@@ -1,5 +1,4 @@
 ﻿using FashionPay.Core.Entities;
-
 namespace FashionPay.Core.Interfaces;
 
 public interface IClienteRepository : IBaseRepository<Cliente>
@@ -9,4 +8,13 @@ public interface IClienteRepository : IBaseRepository<Cliente>
     Task<EstadoCuenta?> GetEstadoCuentaAsync(int clienteId);
     Task<IEnumerable<Cliente>> GetClientesByClasificacionAsync(string clasificacion);
     Task ExecuteCalcularSaldoAsync(int clienteId);
+    Task<Cliente> CrearClienteConEstadoCuentaAsync(
+        string nombre,
+        string email,
+        string? telefono,
+        string? direccion,
+        int diaPago,
+        decimal limiteCredito,
+        int cantidadMaximaPagos,
+        int toleranciasMorosidad);
 }

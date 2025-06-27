@@ -43,7 +43,7 @@ public class ProductoRepository : BaseRepository<Producto>, IProductoRepository
             .Where(p => p.Activo == true &&
                        (p.Nombre.Contains(termino) ||
                         p.Codigo.Contains(termino) ||
-                        p.Descripcion.Contains(termino)))
+                        p.Descripcion!.Contains(termino)))
             .OrderBy(p => p.Nombre)
             .ToListAsync();
     }

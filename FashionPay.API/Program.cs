@@ -1,4 +1,5 @@
 using FashionPay.Infrastructure.Extensions;
+using FashionPay.Application.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,7 @@ builder.Services.AddControllers();
 
 // Configurar Infrastructure (DbContext, Repositorios, Unit of Work)
 builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddApplicationServices();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
