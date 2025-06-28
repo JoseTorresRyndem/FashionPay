@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using FluentValidation;
 using System.Reflection;
 
 namespace FashionPay.Application.Extensions;
@@ -10,7 +11,8 @@ public static class ServiceCollectionExtensions
         // Configurar AutoMapper
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-        // Aquí agregamos otros servicios de Application en el futuro
+        // Configurar FluentValidation
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         // services.AddScoped<IClienteService, ClienteService>();
 
         return services;

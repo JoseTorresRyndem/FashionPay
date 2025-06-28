@@ -145,13 +145,6 @@ namespace FashionPay.API.Controllers
 
             try
             {
-                var clienteExistente = await _unitOfWork.Clientes.GetByEmailAsync(clienteDto.Email);
-                if (clienteExistente != null)
-                {
-                    _logger.LogWarning("Intento de crear cliente con email dulicado: {email}", clienteDto.Email);
-                    return Conflict("Ya existe un cliente con el mismo email");
-                }
-                var cliente = _mapper.Map<Cliente>(clienteDto);
 
                 // Usar procedimiento almacenado sp_AltaCliente que maneja todo
                 var clienteCreado = await _unitOfWork.Clientes.CrearClienteConEstadoCuentaAsync(
@@ -168,7 +161,7 @@ namespace FashionPay.API.Controllers
                 _logger.LogInformation("Cliente creado exitosamente: {ClienteId} - {Email}",
                     clienteCreado.Id, clienteCreado.Email);
 
-                var clienteResponse = _mapper.Map<ClienteResponseDto>(cliente);
+                var clienteResponse = _mapper.Map<ClienteResponseDto>(clienteCreado);
                 return CreatedAtAction(
                     "GetCliente",
                     new { id = clienteCreado.Id },

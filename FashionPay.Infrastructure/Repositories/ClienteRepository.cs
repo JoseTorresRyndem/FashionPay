@@ -2,6 +2,7 @@
 using FashionPay.Core.Entities;
 using FashionPay.Core.Interfaces;
 using Microsoft.Data.SqlClient;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace FashionPay.Infrastructure.Repositories;
@@ -70,14 +71,14 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
     }
 
     public async Task<Cliente> CrearClienteConEstadoCuentaAsync(
-string nombre,
-string email,
-string? telefono,
-string? direccion,
-int diaPago,
-decimal limiteCredito,
-int cantidadMaximaPagos,
-int toleranciasMorosidad)
+    string nombre,
+    string email,
+    string? telefono,
+    string? direccion,
+    int diaPago,
+    decimal limiteCredito,
+    int cantidadMaximaPagos,
+    int toleranciasMorosidad)
     {
         // Parámetros para el procedimiento almacenado
         var parameters = new[]
@@ -93,9 +94,11 @@ int toleranciasMorosidad)
     };
 
         // Ejecutar procedimiento y obtener resultado
-        var resultado = await _context.Database.SqlQueryRaw<SpAltaClienteResult>(
+        var resultados = await _context.Database.SqlQueryRaw<SpAltaClienteResult>(
             "EXEC sp_AltaCliente @Nombre, @Email, @Telefono, @Direccion, @DiaPago, @LimiteCredito, @CantidadMaximaPagos, @ToleranciasMorosidad",
-            parameters).FirstOrDefaultAsync();
+            parameters).ToListAsync();  // ← Cambiar a ToListAsync()
+
+        var resultado = resultados.FirstOrDefault();  // ← Luego obtener el primero
 
         if (resultado == null)
             throw new InvalidOperationException("Error al crear cliente");
