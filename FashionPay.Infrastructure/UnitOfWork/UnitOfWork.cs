@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using FashionPay.Core.Data;
-using FashionPay.Core.Interfaces;
 using FashionPay.Infrastructure.Repositories;
+using FashionPay.Core.Interfaces;
 
 namespace FashionPay.Infrastructure.UnitOfWork;
 
