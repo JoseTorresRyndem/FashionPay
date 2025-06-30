@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
-using FashionPay.Core.Interfaces;
-using FashionPay.Core.Entities;
+﻿using AutoMapper;
 using FashionPay.Application.DTOs.Producto;
+using FashionPay.Application.Exceptions;
+using FashionPay.Application.Services;
+using FashionPay.Core.Entities;
+using FashionPay.Core.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FashionPay.Api.Controllers;
 
@@ -14,10 +16,12 @@ public class ProductosController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ILogger<ProductosController> _logger;
+    private readonly IProductoService _productoService;
 
-    public ProductosController(IUnitOfWork unitOfWork, IMapper mapper, ILogger<ProductosController> logger)
+    public ProductosController(IUnitOfWork unitOfWork, IMapper mapper, ILogger<ProductosController> logger, IProductoService productoService)
     {
         _unitOfWork = unitOfWork;
+        _productoService = productoService;
         _mapper = mapper;
         _logger = logger;
     }
@@ -178,29 +182,19 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            // FluentValidation se ejecuta automáticamente
+            var producto = await _productoService.CrearProductoAsync(productoDto);
+            _logger.LogInformation("Producto creado: {ProductoId} - {Codigo}", producto.Id, producto.Codigo);
 
-            // Mapear DTO a entidad
-            var producto = _mapper.Map<Producto>(productoDto);
-
-            // Crear producto
-            var productoCreado = await _unitOfWork.Productos.AddAsync(producto);
-
-            _logger.LogInformation("Producto creado exitosamente: {ProductoId} - {Codigo}",
-                productoCreado.Id, productoCreado.Codigo);
-
-            // Obtener producto con proveedor para la respuesta
-            var productoCompleto = await _unitOfWork.Productos.GetByIdAsync(productoCreado.Id);
-            var productoResponse = _mapper.Map<ProductoResponseDto>(productoCompleto);
-
-            return CreatedAtAction(
-                "GetProducto",
-                new { id = productoCreado.Id },
-                productoResponse);
+            return CreatedAtAction("GetProducto", new { id = producto.Id }, producto);
+        }
+        catch (BusinessException ex)
+        {
+            _logger.LogWarning("Error de negocio al crear producto: {Error}", ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al crear producto con código {Codigo}", productoDto.Codigo);
+            _logger.LogError(ex, "Error interno al crear producto");
             return StatusCode(500, new { message = "Error interno del servidor" });
         }
     }

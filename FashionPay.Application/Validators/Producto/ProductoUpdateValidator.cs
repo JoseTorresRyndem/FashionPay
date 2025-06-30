@@ -13,8 +13,7 @@ public class ProductoUpdateValidator : AbstractValidator<ProductoUpdateDto>
         _unitOfWork = unitOfWork;
 
         RuleFor(x => x.ProveedorId)
-            .GreaterThan(0).WithMessage("Debe seleccionar un proveedor válido")
-            .MustAsync(ProveedorDebeExistir).WithMessage("El proveedor seleccionado no existe");
+                .GreaterThan(0).WithMessage("Debe seleccionar un proveedor válido");
 
         RuleFor(x => x.Nombre)
             .NotEmpty().WithMessage("El nombre es obligatorio")
@@ -31,11 +30,5 @@ public class ProductoUpdateValidator : AbstractValidator<ProductoUpdateDto>
         RuleFor(x => x.Stock)
             .GreaterThanOrEqualTo(0).WithMessage("El stock no puede ser negativo")
             .LessThanOrEqualTo(99999).WithMessage("El stock no puede exceder 99,999 unidades");
-    }
-
-    private async Task<bool> ProveedorDebeExistir(int proveedorId, CancellationToken cancellationToken)
-    {
-        var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(proveedorId);
-        return proveedor != null && proveedor.Activo;
     }
 }

@@ -22,8 +22,7 @@ public class ClienteCreateValidator : AbstractValidator<ClienteCreateDto>
         RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("El email es obligatorio")
                 .EmailAddress().WithMessage("El formato del email es inválido")
-                .MaximumLength(100).WithMessage("El email no puede exceder 100 caracteres")
-                .MustAsync(EmailDebeSerUnico).WithMessage("Ya existe un cliente con este email");
+                .MaximumLength(100).WithMessage("El email no puede exceder 100 caracteres");
 
         RuleFor(x => x.Telefono)
             .Matches(@"^\d{3}-\d{3}-\d{4}$").WithMessage("El teléfono debe tener el formato: 777-123-4567")
@@ -46,11 +45,6 @@ public class ClienteCreateValidator : AbstractValidator<ClienteCreateDto>
         RuleFor(x => x.ToleranciasMorosidad)
             .GreaterThanOrEqualTo(0).WithMessage("La tolerancia de morosidad no puede ser negativa")
             .LessThanOrEqualTo(30).WithMessage("La tolerancia de morosidad no puede exceder 30 días");
-    }
-    private async Task<bool> EmailDebeSerUnico(string email, CancellationToken cancellationToken)
-    {
-        var clienteExistente = await _unitOfWork.Clientes.GetByEmailAsync(email);
-        return clienteExistente == null;
     }
 }
 

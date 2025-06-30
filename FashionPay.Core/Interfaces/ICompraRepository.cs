@@ -10,4 +10,10 @@ public interface ICompraRepository : IBaseRepository<Compra>
         int? clienteId = null,
         DateTime? fechaDesde = null,
         DateTime? fechaHasta = null);
+
+    Task<Compra> CrearCompraAsync(
+        int clienteId,
+        int cantidadPagos,
+        string? observaciones,
+        List<(int ProductoId, int Cantidad, decimal PrecioUnitario)> detalles);
 }
