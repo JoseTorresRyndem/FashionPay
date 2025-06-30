@@ -26,7 +26,7 @@ public partial class FashionPayContext : DbContext
     public virtual DbSet<DetalleCompra> DetalleCompras { get; set; }
 
     public virtual DbSet<EstadoCuenta> EstadoCuenta { get; set; }
-
+   
     public virtual DbSet<PlanPago> PlanPagos { get; set; }
 
     public virtual DbSet<Producto> Productos { get; set; }

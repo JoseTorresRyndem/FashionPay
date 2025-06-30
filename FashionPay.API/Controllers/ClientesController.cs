@@ -1,8 +1,7 @@
 ﻿using AutoMapper;
 using FashionPay.Application.DTOs.Cliente;
-using FashionPay.Core.Entities;
-using FashionPay.Core.Interfaces;
-using Microsoft.AspNetCore.Http;
+using FashionPay.Application.Exceptions;
+using FashionPay.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FashionPay.API.Controllers
@@ -12,14 +11,12 @@ namespace FashionPay.API.Controllers
     [Produces("application/json")]
     public class ClientesController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
+        private readonly IClienteService _clienteService;
         private readonly ILogger<ClientesController> _logger;
 
-        public ClientesController(IUnitOfWork unitOfWork, IMapper mapper, ILogger<ClientesController> logger)
+        public ClientesController(IClienteService clienteService, ILogger<ClientesController> logger)
         {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
+            _clienteService = clienteService;
             _logger = logger;
         }
 
@@ -33,11 +30,9 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var clientes = await _unitOfWork.Clientes.GetAllAsync();
-                var clientesDto = _mapper.Map<IEnumerable<ClienteResponseDto>>(clientes);
-
-                _logger.LogInformation("Se obtuvieron {Count} clientes", clientesDto.Count());
-                return Ok(clientesDto);
+                var clientes = await _clienteService.GetClientesAsync();
+                _logger.LogInformation("Se obtuvieron {Count} clientes", clientes.Count());
+                return Ok(clientes);
             }
             catch (Exception ex)
             {
@@ -56,16 +51,14 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var cliente = await _unitOfWork.Clientes.GetByIdAsync(id);
-
+                var cliente = await _clienteService.GetClienteByIdAsync(id);
                 if (cliente == null)
                 {
                     _logger.LogWarning("Cliente con ID {ClienteId} no encontrado", id);
                     return NotFound(new { message = $"Cliente con ID {id} no encontrado" });
                 }
 
-                var clienteDto = _mapper.Map<ClienteResponseDto>(cliente);
-                return Ok(clienteDto);
+                return Ok(cliente);
             }
             catch (Exception ex)
             {
@@ -73,6 +66,7 @@ namespace FashionPay.API.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor" });
             }
         }
+
         /// <summary>
         /// Busca cliente por email
         /// </summary>
@@ -84,16 +78,14 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var cliente = await _unitOfWork.Clientes.GetByEmailAsync(email);
-
+                var cliente = await _clienteService.GetClienteByEmailAsync(email);
                 if (cliente == null)
                 {
                     _logger.LogWarning("Cliente con email {Email} no encontrado", email);
                     return NotFound(new { message = $"Cliente con email {email} no encontrado" });
                 }
 
-                var clienteDto = _mapper.Map<ClienteResponseDto>(cliente);
-                return Ok(clienteDto);
+                return Ok(cliente);
             }
             catch (Exception ex)
             {
@@ -112,19 +104,16 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var clasificacionUpper = clasificacion.ToUpper();
-                if (!new[] { "CUMPLIDO", "RIESGOSO", "MOROSO" }.Contains(clasificacionUpper))
-                {
-                    return BadRequest(new { message = "Clasificación debe ser: CUMPLIDO, RIESGOSO o MOROSO" });
-                }
-
-                var clientes = await _unitOfWork.Clientes.GetClientesByClasificacionAsync(clasificacionUpper);
-                var clientesDto = _mapper.Map<IEnumerable<ClienteResponseDto>>(clientes);
-
+                var clientes = await _clienteService.GetClientesByClasificacionAsync(clasificacion);
                 _logger.LogInformation("Se obtuvieron {Count} clientes con clasificación {Clasificacion}",
-                    clientesDto.Count(), clasificacionUpper);
+                    clientes.Count(), clasificacion.ToUpper());
 
-                return Ok(clientesDto);
+                return Ok(clientes);
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogWarning("Error de validación: {Error}", ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -138,40 +127,27 @@ namespace FashionPay.API.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(ClienteResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ClienteResponseDto>> CreateCliente(ClienteCreateDto clienteDto)
         {
-
             try
             {
+                var cliente = await _clienteService.CrearClienteAsync(clienteDto);
+                _logger.LogInformation("Cliente creado: {ClienteId} - {Email}", cliente.Id, cliente.Email);
 
-                // Usar procedimiento almacenado sp_AltaCliente que maneja todo
-                var clienteCreado = await _unitOfWork.Clientes.CrearClienteConEstadoCuentaAsync(
-                    clienteDto.Nombre,
-                    clienteDto.Email,
-                    clienteDto.Telefono,
-                    clienteDto.Direccion,
-                    clienteDto.DiaPago,
-                    clienteDto.LimiteCredito,
-                    clienteDto.CantidadMaximaPagos,
-                    clienteDto.ToleranciasMorosidad
-                );
-
-                _logger.LogInformation("Cliente creado exitosamente: {ClienteId} - {Email}",
-                    clienteCreado.Id, clienteCreado.Email);
-
-                var clienteResponse = _mapper.Map<ClienteResponseDto>(clienteCreado);
-                return CreatedAtAction(
-                    "GetCliente",
-                    new { id = clienteCreado.Id },
-                    clienteResponse);
+                return CreatedAtAction("GetCliente", new { id = cliente.Id }, cliente);
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogWarning("Error de negocio al crear cliente: {Error}", ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear el cliente");
-                return StatusCode(StatusCodes.Status500InternalServerError, "Error interno del servidor");
+                _logger.LogError(ex, "Error interno al crear cliente");
+                return StatusCode(500, new { message = "Error interno del servidor" });
             }
+
         }
 
         /// <summary>
@@ -179,35 +155,35 @@ namespace FashionPay.API.Controllers
         /// </summary>
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(ClienteResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ClienteResponseDto>> UpdateCliente(int id, ClienteUpdateDto clienteDto)
         {
             try
             {
-                var cliente = await _unitOfWork.Clientes.GetByIdAsync(id);
-                if (cliente == null)
-                {
-                    _logger.LogWarning("Intento de actualizar cliente inexistente: {ClienteId}", id);
-                    return NotFound(new { message = $"Cliente con ID {id} no encontrado" });
-                }
+                var cliente = await _clienteService.ActualizarClienteAsync(id, clienteDto);
+                _logger.LogInformation("Cliente actualizado: {ClienteId}", id);
 
-                // Mapear cambios del DTO a la entidad existente
-                _mapper.Map(clienteDto, cliente);
-
-                await _unitOfWork.Clientes.UpdateAsync(cliente);
-
-                _logger.LogInformation("Cliente actualizado exitosamente: {ClienteId}", id);
-
-                var clienteResponse = _mapper.Map<ClienteResponseDto>(cliente);
-                return Ok(clienteResponse);
+                return Ok(cliente);
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning("Cliente no encontrado: {Error}", ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogWarning("Error de negocio: {Error}", ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar cliente {ClienteId}", id);
+                _logger.LogError(ex, "Error interno al actualizar cliente {ClienteId}", id);
                 return StatusCode(500, new { message = "Error interno del servidor" });
             }
         }
+
 
         /// <summary>
         /// Desactiva un cliente (soft delete)
@@ -221,40 +197,28 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var cliente = await _unitOfWork.Clientes.GetByIdAsync(id);
-                if (cliente == null)
-                {
-                    _logger.LogWarning("Intento de eliminar cliente inexistente: {ClienteId}", id);
-                    return NotFound(new { message = $"Cliente con ID {id} no encontrado" });
-                }
-
-                // Verificar que no tenga deuda pendiente
-                var deudaTotal = await _unitOfWork.Clientes.GetDeudaTotalAsync(id);
-                if (deudaTotal > 0)
-                {
-                    _logger.LogWarning("Intento de eliminar cliente con deuda: {ClienteId}, Deuda: {Deuda}",
-                        id, deudaTotal);
-                    return BadRequest(new
-                    {
-                        message = "No se puede eliminar cliente con deuda pendiente",
-                        deudaTotal
-                    });
-                }
-
-                // Soft delete
-                cliente.Activo = false;
-                await _unitOfWork.Clientes.UpdateAsync(cliente);
-
-                _logger.LogInformation("Cliente desactivado exitosamente: {ClienteId}", id);
+                await _clienteService.EliminarClienteAsync(id);
+                _logger.LogInformation("Cliente eliminado: {ClienteId}", id);
 
                 return NoContent();
             }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning("Cliente no encontrado: {Error}", ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogWarning("Error de negocio: {Error}", ex.Message);
+                return BadRequest(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar cliente {ClienteId}", id);
+                _logger.LogError(ex, "Error interno al eliminar cliente {ClienteId}", id);
                 return StatusCode(500, new { message = "Error interno del servidor" });
             }
         }
+
 
         /// <summary>
         /// Recalcula el estado de cuenta de un cliente
@@ -267,15 +231,7 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var cliente = await _unitOfWork.Clientes.GetByIdAsync(id);
-                if (cliente == null)
-                {
-                    _logger.LogWarning("Intento de recalcular saldo de cliente inexistente: {ClienteId}", id);
-                    return NotFound(new { message = $"Cliente con ID {id} no encontrado" });
-                }
-
-                await _unitOfWork.Clientes.ExecuteCalcularSaldoAsync(id);
-
+                await _clienteService.RecalcularSaldoAsync(id);
                 _logger.LogInformation("Saldo recalculado para cliente: {ClienteId}", id);
 
                 return Ok(new
@@ -285,9 +241,14 @@ namespace FashionPay.API.Controllers
                     timestamp = DateTime.Now
                 });
             }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning("Cliente no encontrado: {Error}", ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al recalcular saldo del cliente {ClienteId}", id);
+                _logger.LogError(ex, "Error interno al recalcular saldo {ClienteId}", id);
                 return StatusCode(500, new { message = "Error interno del servidor" });
             }
         }

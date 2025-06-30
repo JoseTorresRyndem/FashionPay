@@ -1,5 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FashionPay.Application.Services;
 using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace FashionPay.Application.Extensions;
@@ -13,7 +14,11 @@ public static class ServiceCollectionExtensions
 
         // Configurar FluentValidation
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-        // services.AddScoped<IClienteService, ClienteService>();
+
+        // Registrar servicios de Application
+        services.AddScoped<ICompraService, CompraService>();
+        services.AddScoped<IProductoService, ProductoService>();
+        services.AddScoped<IClienteService, ClienteService>();
 
         return services;
     }
