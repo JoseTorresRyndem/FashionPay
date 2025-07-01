@@ -49,22 +49,15 @@ public class ProductoService : IProductoService
         return _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
     }
 
-    public async Task<IEnumerable<ProductoResponseDto>> GetProductosByProveedorAsync(int proveedorId)
+    public async Task<IEnumerable<ProductoResponseDto>?> GetProductosByProveedorAsync(int proveedorId)
     {
-        // Validar que el proveedor existe
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(proveedorId);
-        if (proveedor == null)
-            throw new NotFoundException($"Proveedor con ID {proveedorId} no encontrado");
-
         var productos = await _unitOfWork.Productos.GetProductosByProveedorAsync(proveedorId);
-        return _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
+        return productos != null ? _mapper.Map<IEnumerable<ProductoResponseDto>>(productos) : null;
     }
 
     public async Task<IEnumerable<ProductoResponseDto>> BuscarProductosAsync(string termino)
     {
-        if (string.IsNullOrWhiteSpace(termino) || termino.Length < 2)
-            throw new BusinessException("El término de búsqueda debe tener al menos 2 caracteres");
-
         var productos = await _unitOfWork.Productos.BuscarProductosAsync(termino);
         return _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
     }
@@ -101,22 +94,6 @@ public class ProductoService : IProductoService
 
         return true;
     }
-
-    public async Task<ProductoResponseDto> ActualizarStockAsync(int id, int nuevoStock)
-    {
-        if (nuevoStock < 0)
-            throw new BusinessException("El stock no puede ser negativo");
-
-        var producto = await _unitOfWork.Productos.GetByIdAsync(id);
-        if (producto == null)
-            throw new NotFoundException($"Producto con ID {id} no encontrado");
-
-        producto.Stock = nuevoStock;
-        await _unitOfWork.Productos.UpdateAsync(producto);
-
-        return _mapper.Map<ProductoResponseDto>(producto);
-    }
-
     private async Task ValidarCreacionProductoAsync(ProductoCreateDto productoDto)
     {
         // Validar que el proveedor existe y está activo

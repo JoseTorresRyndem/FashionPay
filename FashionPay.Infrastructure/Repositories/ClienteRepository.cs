@@ -18,7 +18,6 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
     }
     public async Task<decimal> GetDeudaTotalAsync(int clienteId)
     {
-        // Obtener de EstadoCuenta o calcular desde PlanPagos
         var estadoCuenta = await _context.EstadoCuenta
             .FirstOrDefaultAsync(ec => ec.ClienteId == clienteId);
 
@@ -48,12 +47,10 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
 
     public async Task ExecuteCalcularSaldoAsync(int clienteId)
     {
-        // Ejecutar procedimiento almacenado
         await _context.Database.ExecuteSqlRawAsync(
             "EXEC sp_CalcularSaldoCliente @p0", clienteId);
     }
 
-    // Sobrescribir métodos base para incluir navegación
     public override async Task<Cliente?> GetByIdAsync(int id)
     {
         return await _dbSet
@@ -96,9 +93,9 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
         // Ejecutar procedimiento y obtener resultado
         var resultados = await _context.Database.SqlQueryRaw<SpAltaClienteResult>(
             "EXEC sp_AltaCliente @Nombre, @Email, @Telefono, @Direccion, @DiaPago, @LimiteCredito, @CantidadMaximaPagos, @ToleranciasMorosidad",
-            parameters).ToListAsync();  // ← Cambiar a ToListAsync()
+            parameters).ToListAsync();
 
-        var resultado = resultados.FirstOrDefault();  // ← Luego obtener el primero
+        var resultado = resultados.FirstOrDefault();
 
         if (resultado == null)
             throw new InvalidOperationException("Error al crear cliente");

@@ -1,7 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
-using FashionPay.Core.Data;
+﻿using FashionPay.Core.Data;
 using FashionPay.Core.Entities;
 using FashionPay.Core.Interfaces;
+using FashionPay.Infrastructure.UnitOfWork;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace FashionPay.Infrastructure.Repositories;
 
@@ -10,17 +13,46 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
     public AbonoRepository(FashionPayContext context) : base(context)
     {
     }
+    public override async Task<Abono?> GetByIdAsync(int id)
+    {
+        return await _dbSet
+            .Include(a => a.Cliente)
+                .ThenInclude(c => c.EstadoCuenta)
+            .Include(a => a.PlanPago)
+                .ThenInclude(pp => pp.Compra)
+                .OrderByDescending(a => a.FechaAbono)
+            .FirstOrDefaultAsync(a => a.Id == id);
+    }
 
     public async Task<IEnumerable<Abono>> GetAbonosByClienteAsync(int clienteId)
     {
         return await _dbSet
+            .Include(a => a.Cliente)
+                .ThenInclude(c => c.EstadoCuenta)
             .Include(a => a.PlanPago)
                 .ThenInclude(pp => pp.Compra)
             .Where(a => a.ClienteId == clienteId)
             .OrderByDescending(a => a.FechaAbono)
             .ToListAsync();
     }
+    public async Task<IEnumerable<Abono>> GetAbonosWithFullRelationsAsync(int? clienteId = null)
+    {
+        var query = _dbSet
+            .Include(a => a.Cliente)
+                .ThenInclude(c => c.EstadoCuenta)
+            .Include(a => a.PlanPago)
+                .ThenInclude(pp => pp.Compra)
+            .AsQueryable();
 
+        if (clienteId.HasValue)
+        {
+            query = query.Where(a => a.ClienteId == clienteId.Value);
+        }
+
+        return await query
+            .OrderByDescending(a => a.FechaAbono)
+            .ToListAsync();
+    }
     public async Task<IEnumerable<Abono>> GetAbonosByFechaAsync(DateTime fecha)
     {
         var fechaInicio = fecha.Date;
@@ -32,16 +64,59 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             .OrderBy(a => a.FechaAbono)
             .ToListAsync();
     }
-
-    public async Task<decimal> GetTotalAbonosClienteAsync(int clienteId, DateTime? fechaDesde = null)
+    public async Task<Abono> AplicarAbonoCompletoAsync(
+     int clienteId,
+     decimal montoAbono,
+     string formaPago,
+     string? observaciones,
+     PlanPago pagoPendiente)
     {
-        var query = _dbSet.Where(a => a.ClienteId == clienteId);
-
-        if (fechaDesde.HasValue)
+        try
         {
-            query = query.Where(a => a.FechaAbono >= fechaDesde.Value);
-        }
+            var abonoIdParameter = new SqlParameter
+            {
+                ParameterName = "@AbonoId",
+                SqlDbType = SqlDbType.Int,
+                Direction = ParameterDirection.Output
+            };
 
-        return await query.SumAsync(a => a.MontoAbono);
+            await _context.Database.ExecuteSqlRawAsync(@"
+            EXEC sp_AplicarAbonoCorregido 
+                @ClienteId = {0}, 
+                @MontoAbono = {1}, 
+                @FormaPago = {2}, 
+                @Observaciones = {3}, 
+                @AbonoId = @AbonoId OUTPUT",
+                clienteId,
+                montoAbono,
+                formaPago,
+                observaciones ?? (object)DBNull.Value,
+                abonoIdParameter);
+
+            // Obtener el ID del abono creado
+            var abonoId = (int)abonoIdParameter.Value;
+
+            var abono = await _dbSet
+                .Include(a => a.Cliente)
+                    .ThenInclude(c => c.EstadoCuenta)
+                .Include(a => a.PlanPago)
+                    .ThenInclude(pp => pp.Compra)
+                .FirstOrDefaultAsync(a => a.Id == abonoId);
+
+            if (abono == null)
+            {
+                throw new InvalidOperationException($"No se pudo recuperar el abono creado con ID {abonoId}");
+            }
+
+            return abono;
+        }
+        catch (SqlException sqlEx)
+        {
+            throw new Exception($"Error al registrar abono: {sqlEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error al registrar abono: {ex.Message}");
+        }
     }
 }

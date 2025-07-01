@@ -36,11 +36,9 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            var productos = await _unitOfWork.Productos.GetProductosActivosAsync();
-            var productosDto = _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
-
-            _logger.LogInformation("Se obtuvieron {Count} productos activos", productosDto.Count());
-            return Ok(productosDto);
+            var productos = await _productoService.GetProductosActivosAsync();
+            _logger.LogInformation("Se obtuvieron {Count} productos activos", productos.Count());
+            return Ok(productos);
         }
         catch (Exception ex)
         {
@@ -60,15 +58,11 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            var producto = await _unitOfWork.Productos.GetByIdAsync(id);
-
-            if (producto == null)
+            var productoDto = await _productoService.GetProductoByIdAsync(id);
+            if (productoDto == null)
             {
-                _logger.LogWarning("Producto con ID {ProductoId} no encontrado", id);
                 return NotFound(new { message = $"Producto con ID {id} no encontrado" });
             }
-
-            var productoDto = _mapper.Map<ProductoResponseDto>(producto);
             return Ok(productoDto);
         }
         catch (Exception ex)
@@ -89,15 +83,11 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            var producto = await _unitOfWork.Productos.GetByCodigoAsync(codigo);
+            var productoDto = await _productoService.GetProductoByCodigoAsync(codigo);
+            if (productoDto == null)
+                return NotFound(new { message = $"Producto con CODIGO {codigo} no encontrado" });
 
-            if (producto == null)
-            {
-                _logger.LogWarning("Producto con código {Codigo} no encontrado", codigo);
-                return NotFound(new { message = $"Producto con código {codigo} no encontrado" });
-            }
-
-            var productoDto = _mapper.Map<ProductoResponseDto>(producto);
+            _logger.LogInformation("Se obtuvo el producto con el codigo: {codigo}", productoDto);
             return Ok(productoDto);
         }
         catch (Exception ex)
@@ -118,15 +108,9 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            // Verificar que el proveedor existe
-            var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(proveedorId);
-            if (proveedor == null)
-            {
-                return NotFound(new { message = $"Proveedor con ID {proveedorId} no encontrado" });
-            }
-
-            var productos = await _unitOfWork.Productos.GetProductosByProveedorAsync(proveedorId);
-            var productosDto = _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
+            var productosDto = await _productoService.GetProductosByProveedorAsync(proveedorId);
+            if (productosDto == null)
+                return NotFound(new { message = $"Productos con ID {proveedorId} de proveedor no encontrados" });
 
             _logger.LogInformation("Se obtuvieron {Count} productos del proveedor {ProveedorId}",
                 productosDto.Count(), proveedorId);
@@ -152,12 +136,9 @@ public class ProductosController : ControllerBase
         try
         {
             if (string.IsNullOrWhiteSpace(termino) || termino.Length < 2)
-            {
-                return BadRequest(new { message = "El término de búsqueda debe tener al menos 2 caracteres" });
-            }
+                return NotFound(new { message = "El término de búsqueda debe tener al menos 2 caracteres" });
 
-            var productos = await _unitOfWork.Productos.BuscarProductosAsync(termino);
-            var productosDto = _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
+            var productosDto = await _productoService.BuscarProductosAsync(termino);
 
             _logger.LogInformation("Búsqueda '{Termino}' devolvió {Count} productos",
                 termino, productosDto.Count());
@@ -211,25 +192,10 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            var producto = await _unitOfWork.Productos.GetByIdAsync(id);
-            if (producto == null)
-            {
-                _logger.LogWarning("Intento de actualizar producto inexistente: {ProductoId}", id);
-                return NotFound(new { message = $"Producto con ID {id} no encontrado" });
-            }
+            var producto = await _productoService.ActualizarProductoAsync(id, productoDto);
+            _logger.LogInformation("Producto atualizado con ID: {ProductoId} correctamente", producto.Id);
 
-            // Mapear cambios del DTO a la entidad existente
-            _mapper.Map(productoDto, producto);
-
-            await _unitOfWork.Productos.UpdateAsync(producto);
-
-            _logger.LogInformation("Producto actualizado exitosamente: {ProductoId}", id);
-
-            // Obtener producto actualizado con proveedor
-            var productoActualizado = await _unitOfWork.Productos.GetByIdAsync(id);
-            var productoResponse = _mapper.Map<ProductoResponseDto>(productoActualizado);
-
-            return Ok(productoResponse);
+            return Ok(producto);
         }
         catch (Exception ex)
         {
@@ -250,23 +216,7 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            var producto = await _unitOfWork.Productos.GetByIdAsync(id);
-            if (producto == null)
-            {
-                _logger.LogWarning("Intento de eliminar producto inexistente: {ProductoId}", id);
-                return NotFound(new { message = $"Producto con ID {id} no encontrado" });
-            }
-
-            // TODO: Verificar que no esté en compras pendientes
-            // var tieneComprasPendientes = await _unitOfWork.Compras.ProductoTieneComprasPendientesAsync(id);
-            // if (tieneComprasPendientes)
-            // {
-            //     return BadRequest(new { message = "No se puede eliminar producto con compras pendientes" });
-            // }
-
-            // Soft delete
-            producto.Activo = false;
-            await _unitOfWork.Productos.UpdateAsync(producto);
+            await _productoService.EliminarProductoAsync(id);
 
             _logger.LogInformation("Producto desactivado exitosamente: {ProductoId}", id);
 
@@ -275,71 +225,6 @@ public class ProductosController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al eliminar producto {ProductoId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
-        }
-    }
-
-    /// <summary>
-    /// Actualiza el stock de un producto
-    /// </summary>
-    [HttpPatch("{id}/stock")]
-    [ProducesResponseType(typeof(ProductoResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ProductoResponseDto>> UpdateStock(int id, [FromBody] int nuevoStock)
-    {
-        try
-        {
-            if (nuevoStock < 0)
-            {
-                return BadRequest(new { message = "El stock no puede ser negativo" });
-            }
-
-            var producto = await _unitOfWork.Productos.GetByIdAsync(id);
-            if (producto == null)
-            {
-                return NotFound(new { message = $"Producto con ID {id} no encontrado" });
-            }
-
-            var stockAnterior = producto.Stock;
-            producto.Stock = nuevoStock;
-
-            await _unitOfWork.Productos.UpdateAsync(producto);
-
-            _logger.LogInformation("Stock actualizado para producto {ProductoId}: {StockAnterior} → {StockNuevo}",
-                id, stockAnterior, nuevoStock);
-
-            var productoResponse = _mapper.Map<ProductoResponseDto>(producto);
-            return Ok(productoResponse);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al actualizar stock del producto {ProductoId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
-        }
-    }
-
-    /// <summary>
-    /// Obtiene productos con stock bajo (menos de 5 unidades)
-    /// </summary>
-    [HttpGet("stock-bajo")]
-    [ProducesResponseType(typeof(IEnumerable<ProductoResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<ProductoResponseDto>>> GetProductosStockBajo()
-    {
-        try
-        {
-            var productos = await _unitOfWork.Productos.FindAsync(p => p.Activo && p.Stock < 5);
-            var productosDto = _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
-
-            _logger.LogInformation("Se encontraron {Count} productos con stock bajo", productosDto.Count());
-
-            return Ok(productosDto);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al obtener productos con stock bajo");
             return StatusCode(500, new { message = "Error interno del servidor" });
         }
     }

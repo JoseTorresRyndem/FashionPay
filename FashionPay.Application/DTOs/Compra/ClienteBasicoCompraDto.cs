@@ -1,6 +1,6 @@
 ﻿namespace FashionPay.Application.DTOs.Compra;
 
-public class ClienteBasicoDto
+public class ClienteBasicoCompraDto
 {
     public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;

@@ -43,7 +43,7 @@ public class CompraProfile : Profile
             .ForMember(dest => dest.FechaVencimiento, opt => opt.MapFrom(src => src.FechaVencimiento.ToDateTime(TimeOnly.MinValue)));
 
         // Mapeo Cliente → ClienteBasicoDto
-        CreateMap<Cliente, ClienteBasicoDto>()
+        CreateMap<Cliente, ClienteBasicoCompraDto>()
             .ForMember(dest => dest.Clasificacion, opt => opt.MapFrom(src =>
                 src.EstadoCuenta != null ? src.EstadoCuenta.Clasificacion : "CUMPLIDO"))
             .ForMember(dest => dest.DeudaTotal, opt => opt.MapFrom(src =>
