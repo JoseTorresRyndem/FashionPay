@@ -36,13 +36,13 @@ public class CompraService : ICompraService
     }
     public async Task<CompraResponseDto?> GetCompraByIdAsync(int id)
     {
-        var compra = await _unitOfWork.Compras.GetCompraWithDetallesAsync(id);
+        var compra = await _unitOfWork.Compras.GetByIdWithRelationsAsync(id);
         return compra != null ? _mapper.Map<CompraResponseDto>(compra) : null;
     }
 
     public async Task<IEnumerable<CompraResponseDto>> GetComprasAsync()
     {
-        var compras = await _unitOfWork.Compras.GetAllAsync();
+        var compras = await _unitOfWork.Compras.GetAllWithRelationsAsync();
         return _mapper.Map<IEnumerable<CompraResponseDto>>(compras);
     }
 
@@ -53,7 +53,7 @@ public class CompraService : ICompraService
         if (cliente == null)
             throw new NotFoundException($"Cliente con ID {clienteId} no encontrado");
 
-        var compras = await _unitOfWork.Compras.GetComprasByClienteAsync(clienteId);
+        var compras = await _unitOfWork.Compras.GetByClienteWithRelationsAsync(clienteId);
         return _mapper.Map<IEnumerable<CompraResponseDto>>(compras);
     }
 
@@ -62,7 +62,10 @@ public class CompraService : ICompraService
         var compras = await _unitOfWork.Compras.GetComprasWithFiltrosAsync(
             filtros.ClienteId,
             filtros.FechaDesde,
-            filtros.FechaHasta);
+            filtros.FechaHasta,
+            filtros.MontoMinimo,
+            filtros.MontoMaximo
+            );
 
         return _mapper.Map<IEnumerable<CompraResponseDto>>(compras);
     }

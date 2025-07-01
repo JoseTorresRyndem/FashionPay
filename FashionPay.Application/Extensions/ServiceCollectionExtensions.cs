@@ -19,6 +19,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICompraService, CompraService>();
         services.AddScoped<IProductoService, ProductoService>();
         services.AddScoped<IClienteService, ClienteService>();
+        services.AddScoped<IAbonoService, AbonoService>();
+        services.AddScoped<IProveedorService, ProveedorService>();
+
 
         return services;
     }

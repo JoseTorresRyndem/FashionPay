@@ -11,7 +11,7 @@ public class CompraResponseDto
     public string? Observaciones { get; set; }
 
     // Información del cliente
-    public ClienteBasicoDto Cliente { get; set; } = new();
+    public ClienteBasicoCompraDto Cliente { get; set; } = new();
 
     // Productos comprados
     public List<DetalleCompraDto> Detalles { get; set; } = new();
