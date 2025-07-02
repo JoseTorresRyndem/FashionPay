@@ -7,7 +7,7 @@ public partial class EstadoCuenta
 {
     public int Id { get; set; }
 
-    public int ClienteId { get; set; }
+    public int IdCliente { get; set; }
 
     public string Clasificacion { get; set; } = null!;
 

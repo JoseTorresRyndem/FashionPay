@@ -7,7 +7,7 @@ public partial class Abono
 {
     public int Id { get; set; }
 
-    public int ClienteId { get; set; }
+    public int IdCliente { get; set; }
 
     public int PlanPagoId { get; set; }
 

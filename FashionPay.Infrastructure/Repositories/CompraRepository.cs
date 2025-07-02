@@ -42,7 +42,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             .Include(c => c.DetalleCompras)
                 .ThenInclude(dc => dc.Producto)
             .Include(c => c.PlanPagos)
-            .Where(c => c.ClienteId == clienteId)
+            .Where(c => c.IdCliente == clienteId)
             .OrderByDescending(c => c.FechaCompra)
             .ToListAsync();
     }
@@ -64,7 +64,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
 
         // Aplicar filtros
         if (clienteId.HasValue)
-            query = query.Where(c => c.ClienteId == clienteId.Value);
+            query = query.Where(c => c.IdCliente == clienteId.Value);
 
         if (fechaDesde.HasValue)
             query = query.Where(c => c.FechaCompra >= fechaDesde.Value);
@@ -125,7 +125,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
 
                     detallesValidados.Add(new DetalleCompra
                     {
-                        ProductoId = detalle.ProductoId,
+                        IdProducto = detalle.ProductoId,
                         Cantidad = detalle.Cantidad,
                         PrecioUnitario = detalle.PrecioUnitario,
                         Subtotal = subtotal
@@ -144,7 +144,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
                 // 5. Crear la compra
                 var compra = new Compra
                 {
-                    ClienteId = clienteId,
+                    IdCliente = clienteId,
                     NumeroCompra = GenerarNumeroCompra(),
                     FechaCompra = DateTime.Now,
                     MontoTotal = montoTotal,
@@ -200,7 +200,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
 
             planPagos.Add(new PlanPago
             {
-                CompraId = compraId,
+                IdCompra = compraId,
                 NumeroPago = i + 1,
                 FechaVencimiento = fechaVencimiento,
                 MontoProgramado = montosPago[i],

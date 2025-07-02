@@ -7,7 +7,7 @@ public partial class PlanPago
 {
     public int Id { get; set; }
 
-    public int CompraId { get; set; }
+    public int IdCompra { get; set; }
 
     public int NumeroPago { get; set; }
 
