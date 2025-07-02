@@ -16,7 +16,7 @@ public class AbonoProfile : Profile
         // Mapeo AbonoCreateDto → Abono
         CreateMap<AbonoCreateDto, Abono>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
-            .ForMember(dest => dest.PlanPagoId, opt => opt.Ignore()) // Se asigna en el servicio
+            .ForMember(dest => dest.IdPlanPago, opt => opt.Ignore()) // Se asigna en el servicio
             .ForMember(dest => dest.NumeroRecibo, opt => opt.Ignore()) // Se genera automáticamente
             .ForMember(dest => dest.FechaAbono, opt => opt.MapFrom(src => DateTime.Now))
             .ForMember(dest => dest.Cliente, opt => opt.Ignore())

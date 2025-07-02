@@ -52,5 +52,5 @@ app.MapControllers();
 
 app.Logger.LogInformation(" FashionPay API iniciada correctamente");
 app.Logger.LogInformation(" Documentación disponible en: https://localhost:{Port}",
-    app.Environment.IsDevelopment() ? "7000" : "443");
+app.Environment.IsDevelopment() ? "7000" : "443");
 app.Run();

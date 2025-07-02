@@ -81,7 +81,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             };
 
             await _context.Database.ExecuteSqlRawAsync(@"
-            EXEC sp_AplicarAbonoCorregido 
+            EXEC sp_AplicarAbono
                 @ClienteId = {0}, 
                 @MontoAbono = {1}, 
                 @FormaPago = {2}, 
@@ -112,7 +112,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
         }
         catch (SqlException sqlEx)
         {
-            throw new Exception($"Error al registrar abono: {sqlEx.Message}");
+            throw new Exception($"Error SQL al registrar abono: {sqlEx.Message}");
         }
         catch (Exception ex)
         {

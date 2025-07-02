@@ -8,12 +8,8 @@ namespace FashionPay.Application.Validators.Cliente;
 
 public class ClienteCreateValidator : AbstractValidator<ClienteCreateDto>
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public ClienteCreateValidator(IUnitOfWork unitOfWork)
+    public ClienteCreateValidator()
     {
-        _unitOfWork = unitOfWork;
-
         RuleFor(c => c.Nombre)
             .NotEmpty().WithMessage("El nombre es obligatorio.")
             .Length(2, 100).WithMessage("El nombre debe tener entre 2 y 100 caracteres.")

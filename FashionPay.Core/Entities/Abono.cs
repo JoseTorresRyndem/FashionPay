@@ -9,7 +9,7 @@ public partial class Abono
 
     public int IdCliente { get; set; }
 
-    public int PlanPagoId { get; set; }
+    public int IdPlanPago { get; set; }
 
     public string NumeroRecibo { get; set; } = null!;
 

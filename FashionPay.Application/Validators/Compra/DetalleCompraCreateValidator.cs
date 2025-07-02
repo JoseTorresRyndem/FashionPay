@@ -7,7 +7,7 @@ public class DetalleCompraCreateValidator : AbstractValidator<DetalleCompraCreat
 {
     public DetalleCompraCreateValidator()
     {
-        RuleFor(x => x.ProductoId)
+        RuleFor(x => x.IdProducto)
             .GreaterThan(0).WithMessage("Debe seleccionar un producto válido");
 
         RuleFor(x => x.Cantidad)

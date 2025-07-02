@@ -7,7 +7,7 @@ public class CompraCreateValidator : AbstractValidator<CompraCreateDto>
 {
     public CompraCreateValidator()
     {
-        RuleFor(x => x.ClienteId)
+        RuleFor(x => x.IdCliente)
             .GreaterThan(0).WithMessage("Debe seleccionar un cliente válido");
 
         RuleFor(x => x.CantidadPagos)
@@ -23,7 +23,7 @@ public class CompraCreateValidator : AbstractValidator<CompraCreateDto>
 
     private bool DetallesNoDuplicados(List<DetalleCompraCreateDto> detalles)
     {
-        var productosIds = detalles.Select(d => d.ProductoId).ToList();
+        var productosIds = detalles.Select(d => d.IdProducto).ToList();
         return productosIds.Count == productosIds.Distinct().Count();
     }
 }
