@@ -26,7 +26,7 @@ public partial class FashionPayContext : DbContext
     public virtual DbSet<DetalleCompra> DetalleCompras { get; set; }
 
     public virtual DbSet<EstadoCuenta> EstadoCuenta { get; set; }
-   
+
     public virtual DbSet<PlanPago> PlanPagos { get; set; }
 
     public virtual DbSet<Producto> Productos { get; set; }
@@ -44,7 +44,7 @@ public partial class FashionPayContext : DbContext
 
             entity.ToTable("Abono", tb => tb.HasTrigger("tr_Abono_ActualizarEstado"));
 
-            entity.HasIndex(e => e.ClienteId, "IX_Abono_Cliente");
+            entity.HasIndex(e => e.IdCliente, "IX_Abono_Cliente");
 
             entity.HasIndex(e => e.FechaAbono, "IX_Abono_Fecha");
 
@@ -63,7 +63,7 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.Observaciones).HasMaxLength(300);
 
             entity.HasOne(d => d.Cliente).WithMany(p => p.Abonos)
-                .HasForeignKey(d => d.ClienteId)
+                .HasForeignKey(d => d.IdCliente)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Abono__ClienteId__656C112C");
 
@@ -101,7 +101,7 @@ public partial class FashionPayContext : DbContext
 
             entity.ToTable("Compra");
 
-            entity.HasIndex(e => e.ClienteId, "IX_Compra_Cliente");
+            entity.HasIndex(e => e.IdCliente, "IX_Compra_Cliente");
 
             entity.HasIndex(e => e.FechaCompra, "IX_Compra_Fecha");
 
@@ -116,7 +116,7 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.Observaciones).HasMaxLength(500);
 
             entity.HasOne(d => d.Cliente).WithMany(p => p.Compras)
-                .HasForeignKey(d => d.ClienteId)
+                .HasForeignKey(d => d.IdCliente)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Compra__ClienteI__5165187F");
         });
@@ -127,19 +127,19 @@ public partial class FashionPayContext : DbContext
 
             entity.ToTable("DetalleCompra");
 
-            entity.HasIndex(e => e.CompraId, "IX_DetalleCompra_Compra");
+            entity.HasIndex(e => e.IdCompra, "IX_DetalleCompra_Compra");
 
-            entity.HasIndex(e => e.ProductoId, "IX_DetalleCompra_Producto");
+            entity.HasIndex(e => e.IdProducto, "IX_DetalleCompra_Producto");
 
             entity.Property(e => e.PrecioUnitario).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Subtotal).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Compra).WithMany(p => p.DetalleCompras)
-                .HasForeignKey(d => d.CompraId)
+                .HasForeignKey(d => d.IdCompra)
                 .HasConstraintName("FK__DetalleCo__Compr__5629CD9C");
 
             entity.HasOne(d => d.Producto).WithMany(p => p.DetalleCompras)
-                .HasForeignKey(d => d.ProductoId)
+                .HasForeignKey(d => d.IdProducto)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__DetalleCo__Produ__571DF1D5");
         });
@@ -150,7 +150,7 @@ public partial class FashionPayContext : DbContext
 
             entity.HasIndex(e => e.Clasificacion, "IX_EstadoCuenta_Clasificacion");
 
-            entity.HasIndex(e => e.ClienteId, "UQ__EstadoCu__71ABD0865A8F54CD").IsUnique();
+            entity.HasIndex(e => e.IdCliente, "UQ__EstadoCu__71ABD0865A8F54CD").IsUnique();
 
             entity.Property(e => e.Clasificacion)
                 .HasMaxLength(20)
@@ -159,7 +159,7 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.FechaActualizacion).HasDefaultValueSql("(getdate())");
 
             entity.HasOne(d => d.Cliente).WithOne(p => p.EstadoCuenta)
-                .HasForeignKey<EstadoCuenta>(d => d.ClienteId)
+                .HasForeignKey<EstadoCuenta>(d => d.IdCliente)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__EstadoCue__Clien__70DDC3D8");
         });
@@ -170,13 +170,13 @@ public partial class FashionPayContext : DbContext
 
             entity.ToTable("PlanPago");
 
-            entity.HasIndex(e => e.CompraId, "IX_PlanPago_Compra");
+            entity.HasIndex(e => e.IdCompra, "IX_PlanPago_Compra");
 
             entity.HasIndex(e => e.Estado, "IX_PlanPago_Estado");
 
             entity.HasIndex(e => e.FechaVencimiento, "IX_PlanPago_Vencimiento");
 
-            entity.HasIndex(e => new { e.CompraId, e.NumeroPago }, "UQ__PlanPago__A1B2D5F68B81E4AE").IsUnique();
+            entity.HasIndex(e => new { e.IdCompra, e.NumeroPago }, "UQ__PlanPago__A1B2D5F68B81E4AE").IsUnique();
 
             entity.Property(e => e.DiasVencidos).HasComputedColumnSql("(case when [Estado]='VENCIDO' then datediff(day,[FechaVencimiento],getdate()) else (0) end)", false);
             entity.Property(e => e.Estado)
@@ -187,7 +187,7 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.SaldoPendiente).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Compra).WithMany(p => p.PlanPagos)
-                .HasForeignKey(d => d.CompraId)
+                .HasForeignKey(d => d.IdCompra)
                 .HasConstraintName("FK__PlanPago__Compra__5CD6CB2B");
         });
 
@@ -199,7 +199,7 @@ public partial class FashionPayContext : DbContext
 
             entity.HasIndex(e => e.Codigo, "IX_Producto_Codigo");
 
-            entity.HasIndex(e => e.ProveedorId, "IX_Producto_Proveedor");
+            entity.HasIndex(e => e.IdProveedor, "IX_Producto_Proveedor");
 
             entity.HasIndex(e => e.Codigo, "UQ__Producto__06370DAC0CC5A9B6").IsUnique();
 
@@ -211,7 +211,7 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.Precio).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Proveedor).WithMany(p => p.Productos)
-                .HasForeignKey(d => d.ProveedorId)
+                .HasForeignKey(d => d.IdProveedor)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Producto__Provee__4CA06362");
         });
@@ -269,11 +269,11 @@ public partial class FashionPayContext : DbContext
             .HasDatabaseName("IX_Cliente_Email");
 
         modelBuilder.Entity<Compra>()
-            .HasIndex(c => new { c.ClienteId, c.FechaCompra })
+            .HasIndex(c => new { c.IdCliente, c.FechaCompra })
             .HasDatabaseName("IX_Compra_Cliente_Fecha");
 
         modelBuilder.Entity<PlanPago>()
-            .HasIndex(p => new { p.CompraId, p.Estado })
+            .HasIndex(p => new { p.IdCompra, p.Estado })
             .HasDatabaseName("IX_PlanPago_Compra_Estado")
             .IncludeProperties(p => p.SaldoPendiente);
 

@@ -31,7 +31,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
                 .ThenInclude(c => c.EstadoCuenta)
             .Include(a => a.PlanPago)
                 .ThenInclude(pp => pp.Compra)
-            .Where(a => a.ClienteId == clienteId)
+            .Where(a => a.IdCliente == clienteId)
             .OrderByDescending(a => a.FechaAbono)
             .ToListAsync();
     }
@@ -46,7 +46,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
 
         if (clienteId.HasValue)
         {
-            query = query.Where(a => a.ClienteId == clienteId.Value);
+            query = query.Where(a => a.IdCliente == clienteId.Value);
         }
 
         return await query

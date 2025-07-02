@@ -28,7 +28,7 @@ public class CompraProfile : Profile
         // Mapeo DetalleCompraCreateDto → DetalleCompra
         CreateMap<DetalleCompraCreateDto, DetalleCompra>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
-            .ForMember(dest => dest.CompraId, opt => opt.Ignore())
+            .ForMember(dest => dest.IdCompra, opt => opt.Ignore())
             .ForMember(dest => dest.Subtotal, opt => opt.MapFrom(src => src.Cantidad * src.PrecioUnitario))
             .ForMember(dest => dest.Compra, opt => opt.Ignore())
             .ForMember(dest => dest.Producto, opt => opt.Ignore());

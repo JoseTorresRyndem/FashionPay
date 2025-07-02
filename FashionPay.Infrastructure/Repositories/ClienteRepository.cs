@@ -19,7 +19,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
     public async Task<decimal> GetDeudaTotalAsync(int clienteId)
     {
         var estadoCuenta = await _context.EstadoCuenta
-            .FirstOrDefaultAsync(ec => ec.ClienteId == clienteId);
+            .FirstOrDefaultAsync(ec => ec.IdCliente == clienteId);
 
         if (estadoCuenta != null)
         {
@@ -28,13 +28,13 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
 
         // Calcular si no existe estado de cuenta
         return await _context.PlanPagos
-            .Where(pp => pp.Compra.ClienteId == clienteId && pp.SaldoPendiente > 0)
+            .Where(pp => pp.Compra.IdCliente == clienteId && pp.SaldoPendiente > 0)
             .SumAsync(pp => pp.SaldoPendiente);
     }
     public async Task<EstadoCuenta?> GetEstadoCuentaAsync(int clienteId)
     {
         return await _context.EstadoCuenta
-            .FirstOrDefaultAsync(ec => ec.ClienteId == clienteId);
+            .FirstOrDefaultAsync(ec => ec.IdCliente == clienteId);
     }
 
     public async Task<IEnumerable<Cliente>> GetClientesByClasificacionAsync(string clasificacion)

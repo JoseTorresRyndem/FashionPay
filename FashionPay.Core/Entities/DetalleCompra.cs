@@ -7,9 +7,9 @@ public partial class DetalleCompra
 {
     public int Id { get; set; }
 
-    public int CompraId { get; set; }
+    public int IdCompra { get; set; }
 
-    public int ProductoId { get; set; }
+    public int IdProducto { get; set; }
 
     public int Cantidad { get; set; }
 

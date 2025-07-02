@@ -24,7 +24,7 @@ public class ProductoRepository : BaseRepository<Producto>, IProductoRepository
     {
         return await _dbSet
             .Include(p => p.Proveedor)
-            .Where(p => p.ProveedorId == proveedorId && p.Activo == true)
+            .Where(p => p.IdProveedor == proveedorId && p.Activo == true)
             .OrderBy(p => p.Nombre)
             .ToListAsync();
     }
