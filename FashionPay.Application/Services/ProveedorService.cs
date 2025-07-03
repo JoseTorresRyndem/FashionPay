@@ -165,7 +165,7 @@ public class ProveedorService : IProveedorService
         var proveedores = await _unitOfWork.Proveedores.GetAllAsync();
         return proveedores.Any(p =>
             p.Nombre.Equals(nombre, StringComparison.OrdinalIgnoreCase) &&
-            (!excludeId.HasValue || p.Id != excludeId.Value));
+            (!excludeId.HasValue || p.IdProveedor != excludeId.Value));
     }
 
     #region Métodos privados
@@ -195,7 +195,7 @@ public class ProveedorService : IProveedorService
         if (!string.IsNullOrEmpty(proveedorDto.Email))
         {
             var proveedores = await _unitOfWork.Proveedores.GetAllAsync();
-            if (proveedores.Any(p => p.Id != id && !string.IsNullOrEmpty(p.Email) &&
+            if (proveedores.Any(p => p.IdProveedor != id && !string.IsNullOrEmpty(p.Email) &&
                                     p.Email.Equals(proveedorDto.Email, StringComparison.OrdinalIgnoreCase)))
                 throw new BusinessException($"Ya existe otro proveedor con el email '{proveedorDto.Email}'");
         }
@@ -203,7 +203,7 @@ public class ProveedorService : IProveedorService
 
     private async Task EnriquecerProveedorAsync(ProveedorResponseDto proveedorDto)
     {
-        var productos = await _unitOfWork.Productos.GetProductosByProveedorAsync(proveedorDto.Id);
+        var productos = await _unitOfWork.Productos.GetProductosByProveedorAsync(proveedorDto.IdProveedor);
         var productosLista = productos.ToList();
 
         proveedorDto.TotalProductos = productosLista.Count;

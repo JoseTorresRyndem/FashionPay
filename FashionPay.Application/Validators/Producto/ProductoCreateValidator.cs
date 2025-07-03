@@ -7,7 +7,7 @@ public class ProductoCreateValidator : AbstractValidator<ProductoCreateDto>
 {
     public ProductoCreateValidator()
     {
-        RuleFor(x => x.ProveedorId)
+        RuleFor(x => x.IdProveedor)
             .GreaterThan(0).WithMessage("Debe seleccionar un proveedor válido");
 
         RuleFor(x => x.Codigo)

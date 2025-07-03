@@ -137,9 +137,9 @@ public class AbonosController : ControllerBase
         {
             var abono = await _abonoService.RegistrarAbonoAsync(abonoDto);
             _logger.LogInformation("Abono registrado: {AbonoId} - Cliente: {ClienteId} - Monto: ${MontoAbono:F2}",
-                abono.Id, abono.Cliente.Id, abono.MontoAbono);
+                abono.IdAbono, abono.Cliente.IdCliente, abono.MontoAbono);
 
-            return CreatedAtAction("GetAbono", new { id = abono.Id }, abono);
+            return CreatedAtAction("GetAbono", new { id = abono.IdAbono }, abono);
         }
         catch (BusinessException ex)
         {

@@ -5,7 +5,7 @@ namespace FashionPay.Core.Entities;
 
 public partial class Cliente
 {
-    public int Id { get; set; }
+    public int IdCliente { get; set; }
 
     public string Nombre { get; set; } = null!;
 
@@ -28,6 +28,8 @@ public partial class Cliente
     public DateTime FechaRegistro { get; set; }
 
     public bool Activo { get; set; }
+
+    public decimal? CreditoDisponible { get; set; }
 
     public virtual ICollection<Abono> Abonos { get; set; } = new List<Abono>();
 

@@ -7,7 +7,7 @@ public class AbonoCreateValidator : AbstractValidator<AbonoCreateDto>
 {
     public AbonoCreateValidator()
     {
-        RuleFor(x => x.ClienteId)
+        RuleFor(x => x.IdCliente)
             .GreaterThan(0).WithMessage("Debe seleccionar un cliente válido");
 
         RuleFor(x => x.MontoAbono)

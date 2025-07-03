@@ -27,7 +27,7 @@ public class ProductoService : IProductoService
         var productoCreado = await _unitOfWork.Productos.AddAsync(producto);
 
         // Obtener producto completo con proveedor
-        var productoCompleto = await _unitOfWork.Productos.GetByIdAsync(productoCreado.Id);
+        var productoCompleto = await _unitOfWork.Productos.GetByIdAsync(productoCreado.IdProducto);
         return _mapper.Map<ProductoResponseDto>(productoCompleto!);
     }
 
@@ -97,7 +97,7 @@ public class ProductoService : IProductoService
     private async Task ValidarCreacionProductoAsync(ProductoCreateDto productoDto)
     {
         // Validar que el proveedor existe y está activo
-        var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(productoDto.ProveedorId);
+        var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(productoDto.IdProveedor);
         if (proveedor == null || !proveedor.Activo)
             throw new BusinessException("El proveedor seleccionado no existe o está inactivo");
 
@@ -110,7 +110,7 @@ public class ProductoService : IProductoService
     private async Task ValidarActualizacionProductoAsync(int id, ProductoUpdateDto productoDto)
     {
         // Validar que el proveedor existe y está activo
-        var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(productoDto.ProveedorId);
+        var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(productoDto.IdProveedor);
         if (proveedor == null || !proveedor.Activo)
             throw new BusinessException("El proveedor seleccionado no existe o está inactivo");
     }

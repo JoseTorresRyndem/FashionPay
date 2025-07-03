@@ -28,7 +28,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
 
         // Calcular si no existe estado de cuenta
         return await _context.PlanPagos
-            .Where(pp => pp.Compra.IdCliente == clienteId && pp.SaldoPendiente > 0)
+            .Where(pp => pp.IdCompraNavigation.IdCliente == clienteId && pp.SaldoPendiente > 0)
             .SumAsync(pp => pp.SaldoPendiente);
     }
     public async Task<EstadoCuenta?> GetEstadoCuentaAsync(int clienteId)
@@ -56,14 +56,13 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
         return await _dbSet
             .Include(c => c.EstadoCuenta)
             .Include(c => c.Compras)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.IdCliente == id);
     }
 
     public override async Task<IEnumerable<Cliente>> GetAllAsync()
     {
         return await _dbSet
             .Include(c => c.EstadoCuenta)
-            .OrderBy(c => c.Nombre)
             .ToListAsync();
     }
 
@@ -101,10 +100,10 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
             throw new InvalidOperationException("Error al crear cliente");
 
         // Obtener el cliente recién creado con su estado de cuenta
-        var clienteCreado = await GetByIdAsync(resultado.ClienteId);
+        var clienteCreado = await GetByIdAsync(resultado.IdCliente);
 
         if (clienteCreado == null)
-            throw new InvalidOperationException($"Cliente creado pero no encontrado: {resultado.ClienteId}");
+            throw new InvalidOperationException($"Cliente creado pero no encontrado: {resultado.IdCliente}");
 
         return clienteCreado;
     }
@@ -112,7 +111,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
     // Clase para el resultado del procedimiento almacenado
     public class SpAltaClienteResult
     {
-        public int ClienteId { get; set; }
+        public int IdCliente { get; set; }
         public string Mensaje { get; set; } = string.Empty;
     }
 }

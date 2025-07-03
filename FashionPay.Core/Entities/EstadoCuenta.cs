@@ -5,7 +5,7 @@ namespace FashionPay.Core.Entities;
 
 public partial class EstadoCuenta
 {
-    public int Id { get; set; }
+    public int IdEstadoCuenta { get; set; }
 
     public int IdCliente { get; set; }
 
@@ -21,5 +21,5 @@ public partial class EstadoCuenta
 
     public DateTime FechaActualizacion { get; set; }
 
-    public virtual Cliente Cliente { get; set; } = null!;
+    public virtual Cliente IdClienteNavigation { get; set; } = null!;
 }

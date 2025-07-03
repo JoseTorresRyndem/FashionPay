@@ -12,7 +12,7 @@ public class ProductoUpdateValidator : AbstractValidator<ProductoUpdateDto>
     {
         _unitOfWork = unitOfWork;
 
-        RuleFor(x => x.ProveedorId)
+        RuleFor(x => x.IdProveedor)
                 .GreaterThan(0).WithMessage("Debe seleccionar un proveedor válido");
 
         RuleFor(x => x.Nombre)

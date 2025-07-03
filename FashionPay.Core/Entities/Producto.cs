@@ -5,7 +5,7 @@ namespace FashionPay.Core.Entities;
 
 public partial class Producto
 {
-    public int Id { get; set; }
+    public int IdProducto { get; set; }
 
     public int IdProveedor { get; set; }
 
@@ -25,5 +25,5 @@ public partial class Producto
 
     public virtual ICollection<DetalleCompra> DetalleCompras { get; set; } = new List<DetalleCompra>();
 
-    public virtual Proveedor Proveedor { get; set; } = null!;
+    public virtual Proveedor IdProveedorNavigation { get; set; } = null!;
 }

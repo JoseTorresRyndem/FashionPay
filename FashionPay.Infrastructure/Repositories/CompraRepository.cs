@@ -14,10 +14,10 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
     public async Task<IEnumerable<Compra>> GetAllWithRelationsAsync()
     {
         return await _context.Compras
-            .Include(c => c.Cliente)
+            .Include(c => c.IdClienteNavigation)
                 .ThenInclude(cl => cl.EstadoCuenta)
             .Include(c => c.DetalleCompras)
-                .ThenInclude(dc => dc.Producto)
+                .ThenInclude(dc => dc.IdProductoNavigation)
             .Include(c => c.PlanPagos)
             .OrderByDescending(c => c.FechaCompra)
             .ToListAsync();
@@ -26,21 +26,21 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
     public async Task<Compra?> GetByIdWithRelationsAsync(int id)
     {
         return await _context.Compras
-            .Include(c => c.Cliente)
+            .Include(c => c.IdClienteNavigation)
                 .ThenInclude(cl => cl.EstadoCuenta)
             .Include(c => c.DetalleCompras)
-                .ThenInclude(dc => dc.Producto)
+                .ThenInclude(dc => dc.IdProductoNavigation)
             .Include(c => c.PlanPagos)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.IdCompra == id);
     }
     // Método para obtener compra por ID cliente con relaciones
     public async Task<IEnumerable<Compra>> GetByClienteWithRelationsAsync(int clienteId)
     {
         return await _context.Compras
-            .Include(c => c.Cliente)
+            .Include(c => c.IdClienteNavigation)
                 .ThenInclude(cl => cl.EstadoCuenta)
             .Include(c => c.DetalleCompras)
-                .ThenInclude(dc => dc.Producto)
+                .ThenInclude(dc => dc.IdProductoNavigation)
             .Include(c => c.PlanPagos)
             .Where(c => c.IdCliente == clienteId)
             .OrderByDescending(c => c.FechaCompra)
@@ -55,10 +55,10 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
         )
     {
         var query = _context.Compras
-            .Include(c => c.Cliente)
+            .Include(c => c.IdClienteNavigation)
                 .ThenInclude(cl => cl.EstadoCuenta)
             .Include(c => c.DetalleCompras)
-                .ThenInclude(dc => dc.Producto)
+                .ThenInclude(dc => dc.IdProductoNavigation)
             .Include(c => c.PlanPagos)
             .AsQueryable();
 
@@ -88,7 +88,6 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
         string? observaciones,
         List<(int ProductoId, int Cantidad, decimal PrecioUnitario)> detalles)
     {
-        // Usar la estrategia de ejecución de EF Core para manejar transacciones
         var strategy = _context.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(async () =>
         {
@@ -99,7 +98,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
                 // 1. Validar que el cliente existe y puede comprar
                 var cliente = await _context.Clientes
                 .Include(c => c.EstadoCuenta)
-                .FirstOrDefaultAsync(c => c.Id == clienteId);
+                .FirstOrDefaultAsync(c => c.IdCliente == clienteId);
 
                 if (cliente == null || !cliente.Activo)
                     throw new InvalidOperationException("Cliente no válido para realizar compras");
@@ -132,7 +131,13 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
                     });
                 }
 
-                // 3. Validar límite de crédito
+                if (cliente.CreditoDisponible < montoTotal)
+                {
+                    throw new InvalidOperationException(
+                        $"Crédito insuficiente. Disponible: ${cliente.CreditoDisponible:F2}, " +
+                        $"Requerido: ${montoTotal:F2}");
+                }
+
                 var deudaActual = cliente.EstadoCuenta?.DeudaTotal ?? 0;
                 if (deudaActual + montoTotal > cliente.LimiteCredito)
                     throw new InvalidOperationException("Monto excede el límite de crédito disponible");
@@ -141,7 +146,6 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
                 if (cantidadPagos > cliente.CantidadMaximaPagos)
                     throw new InvalidOperationException($"Máximo {cliente.CantidadMaximaPagos} pagos permitidos");
 
-                // 5. Crear la compra
                 var compra = new Compra
                 {
                     IdCliente = clienteId,
@@ -151,15 +155,19 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
                     CantidadPagos = cantidadPagos,
                     MontoMensual = Math.Round(montoTotal / cantidadPagos, 2),
                     Observaciones = observaciones,
+                    EstadoCompra = "ACTIVA",
                     DetalleCompras = detallesValidados
                 };
 
                 _context.Compras.Add(compra);
                 await _context.SaveChangesAsync();
 
-                // 6. Crear plan de pagos con montos exactos
+                cliente.CreditoDisponible -= montoTotal;
+                _context.Clientes.Update(cliente);
+                await _context.SaveChangesAsync();
+
                 var planPagos = CalcularPlanPagos(
-                    compra.Id,
+                    compra.IdCompra,
                     montoTotal,
                     cantidadPagos,
                     cliente.DiaPago);
@@ -167,13 +175,11 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
                 _context.PlanPagos.AddRange(planPagos);
                 await _context.SaveChangesAsync();
 
-                // 7. Actualizar estado de cuenta del cliente
                 await ActualizarEstadoCuentaClienteAsync(clienteId);
 
                 await transaction.CommitAsync();
 
-                // 8. Retornar compra completa con navegación
-                return await GetByIdWithRelationsAsync(compra.Id)
+                return await GetByIdWithRelationsAsync(compra.IdCompra)
                     ?? throw new InvalidOperationException("Error al recuperar compra creada");
             }
             catch
@@ -183,9 +189,6 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             }
         });
     }
-
-
-
     //Métodos privados para calcular los planes de pago y montos
     private List<PlanPago> CalcularPlanPagos(int compraId, decimal montoTotal, int cantidadPagos, int diaPagoCliente)
     {

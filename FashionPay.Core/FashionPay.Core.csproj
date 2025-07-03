@@ -9,7 +9,7 @@
 		<Version>3.0.0</Version>
 		<Authors>FashionPay Team</Authors>
 		<Description>Core entities and DbContext for FashionPay application</Description>
-		<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -23,11 +23,10 @@ public class CompraService : ICompraService
 
         // 2. Convertir DTO a parámetros primitivos para el repositorio
         var detalles = compraDto.Detalles.Select(d =>
-            (d.ProductoId, d.Cantidad, d.PrecioUnitario)).ToList();
+            (d.IdProducto, d.Cantidad, d.PrecioUnitario)).ToList();
 
-        // 3. Crear compra usando el repositorio
         var compra = await _unitOfWork.Compras.CrearCompraAsync(
-            compraDto.ClienteId,
+            compraDto.IdCliente,
             compraDto.CantidadPagos,
             compraDto.Observaciones,
             detalles);
@@ -60,7 +59,7 @@ public class CompraService : ICompraService
     public async Task<IEnumerable<CompraResponseDto>> GetComprasConFiltrosAsync(CompraFiltrosDto filtros)
     {
         var compras = await _unitOfWork.Compras.GetComprasWithFiltrosAsync(
-            filtros.ClienteId,
+            filtros.IdCliente,
             filtros.FechaDesde,
             filtros.FechaHasta,
             filtros.MontoMinimo,
@@ -72,12 +71,12 @@ public class CompraService : ICompraService
     private async Task ValidarCompraAsync(CompraCreateDto compraDto)
     {
         // 1. Validar que el cliente existe y está activo
-        var cliente = await _unitOfWork.Clientes.GetByIdAsync(compraDto.ClienteId);
+        var cliente = await _unitOfWork.Clientes.GetByIdAsync(compraDto.IdCliente);
         if (cliente == null || !cliente.Activo)
             throw new BusinessException("El cliente seleccionado no existe o está inactivo");
 
         // 2. Validar que el cliente no esté moroso
-        var estadoCuenta = await _unitOfWork.Clientes.GetEstadoCuentaAsync(compraDto.ClienteId);
+        var estadoCuenta = await _unitOfWork.Clientes.GetEstadoCuentaAsync(compraDto.IdCliente);
         if (estadoCuenta?.Clasificacion == "MOROSO")
             throw new BusinessException("El cliente está clasificado como moroso y no puede realizar compras");
 
@@ -96,9 +95,9 @@ public class CompraService : ICompraService
         foreach (var detalle in compraDto.Detalles)
         {
             // Validar que el producto existe y está activo
-            var producto = await _unitOfWork.Productos.GetByIdAsync(detalle.ProductoId);
+            var producto = await _unitOfWork.Productos.GetByIdAsync(detalle.IdProducto);
             if (producto == null || !producto.Activo)
-                throw new BusinessException($"El producto con ID {detalle.ProductoId} no existe o está inactivo");
+                throw new BusinessException($"El producto con ID {detalle.IdProducto} no existe o está inactivo");
 
             // Validar que el precio coincide con el precio actual
             if (producto.Precio != detalle.PrecioUnitario)
@@ -113,7 +112,7 @@ public class CompraService : ICompraService
         }
 
         // 6. Validar límite de crédito
-        var deudaActual = await _unitOfWork.Clientes.GetDeudaTotalAsync(compraDto.ClienteId);
+        var deudaActual = await _unitOfWork.Clientes.GetDeudaTotalAsync(compraDto.IdCliente);
         var creditoDisponible = cliente.LimiteCredito - deudaActual;
 
         if (montoTotal > creditoDisponible)
@@ -122,5 +121,7 @@ public class CompraService : ICompraService
         // 7. Validar monto mínimo de compra (opcional)
         if (montoTotal < 100)
             throw new BusinessException("El monto mínimo de compra es $100.00");
+
+        Console.WriteLine($"Compra validada: Cliente {cliente.Nombre}, Productos: {string.Join(", ", productosValidados)}, Monto Total: ${montoTotal:F2}");
     }
 }

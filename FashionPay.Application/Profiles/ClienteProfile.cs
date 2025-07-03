@@ -13,7 +13,7 @@ public class ClienteProfile : Profile
 
         // Mapeo ClienteCreateDto → Cliente  
         CreateMap<ClienteCreateDto, Cliente>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.IdCliente, opt => opt.Ignore())
             .ForMember(dest => dest.PeriodicidadPago, opt => opt.MapFrom(src => 30)) // Mensual por defecto
             .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => DateTime.Now))
             .ForMember(dest => dest.Activo, opt => opt.MapFrom(src => true))
@@ -22,7 +22,7 @@ public class ClienteProfile : Profile
 
         // Mapeo ClienteUpdateDto → Cliente
         CreateMap<ClienteUpdateDto, Cliente>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.IdCliente, opt => opt.Ignore())
             .ForMember(dest => dest.Email, opt => opt.Ignore()) // No permitir cambio de email
             .ForMember(dest => dest.PeriodicidadPago, opt => opt.Ignore())
             .ForMember(dest => dest.FechaRegistro, opt => opt.Ignore())

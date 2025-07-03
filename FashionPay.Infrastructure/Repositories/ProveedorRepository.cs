@@ -23,6 +23,6 @@ public class ProveedorRepository : BaseRepository<Proveedor>, IProveedorReposito
     {
         return await _dbSet
             .Include(p => p.Productos.Where(prod => prod.Activo == true))
-            .FirstOrDefaultAsync(p => p.Id == proveedorId);
+            .FirstOrDefaultAsync(p => p.IdProveedor == proveedorId);
     }
 }

@@ -2,7 +2,7 @@
 
 public class PlanPagoDto
 {
-    public int Id { get; set; }
+    public int IdPlanPago { get; set; }
     public int NumeroPago { get; set; }
     public DateTime FechaVencimiento { get; set; }
     public decimal MontoProgramado { get; set; }

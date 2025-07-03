@@ -8,12 +8,8 @@ namespace FashionPay.Application.Validators.Cliente;
 
 public class ClienteCreateValidator : AbstractValidator<ClienteCreateDto>
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public ClienteCreateValidator(IUnitOfWork unitOfWork)
+    public ClienteCreateValidator()
     {
-        _unitOfWork = unitOfWork;
-
         RuleFor(c => c.Nombre)
             .NotEmpty().WithMessage("El nombre es obligatorio.")
             .Length(2, 100).WithMessage("El nombre debe tener entre 2 y 100 caracteres.")
@@ -25,7 +21,7 @@ public class ClienteCreateValidator : AbstractValidator<ClienteCreateDto>
                 .MaximumLength(100).WithMessage("El email no puede exceder 100 caracteres");
 
         RuleFor(x => x.Telefono)
-            .Matches(@"^\d{3}-\d{3}-\d{4}$").WithMessage("El teléfono debe tener el formato: 777-123-4567")
+            .Matches(@"^\d{3}-\d{3}-\d{4}$").WithMessage("El teléfono debe tener el formato: 000-000-0000")
             .When(x => !string.IsNullOrEmpty(x.Telefono));
 
         RuleFor(x => x.Direccion)

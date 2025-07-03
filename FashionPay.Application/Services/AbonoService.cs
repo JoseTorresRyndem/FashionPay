@@ -23,7 +23,7 @@ public class AbonoService : IAbonoService
         await ValidarAbonoAsync(abonoDto);
 
         // 2. Buscar el pago más antiguo pendiente del cliente (lógica de negocio)
-        var pagoPendiente = await BuscarPagoMasAntiguoPendienteAsync(abonoDto.ClienteId);
+        var pagoPendiente = await BuscarPagoMasAntiguoPendienteAsync(abonoDto.IdCliente);
         if (pagoPendiente == null)
             throw new BusinessException("El cliente no tiene pagos pendientes");
         try
@@ -31,14 +31,14 @@ public class AbonoService : IAbonoService
 
             // 3. Delegar al Repository la aplicación completa (responsabilidad de datos)
             var abono = await _unitOfWork.Abonos.AplicarAbonoCompletoAsync(
-                abonoDto.ClienteId,
+                abonoDto.IdCliente,
                 abonoDto.MontoAbono,
                 abonoDto.FormaPago,
                 abonoDto.Observaciones,
                 pagoPendiente);
 
             // 4. Retornar respuesta completa (responsabilidad del Service)
-            var abonoCompleto = await _unitOfWork.Abonos.GetByIdAsync(abono.Id);
+            var abonoCompleto = await _unitOfWork.Abonos.GetByIdAsync(abono.IdAbono);
             return _mapper.Map<AbonoResponseDto>(abonoCompleto!);
         }
         catch (Exception ex)
@@ -67,7 +67,7 @@ public class AbonoService : IAbonoService
 
     public async Task<IEnumerable<AbonoResponseDto>> GetAbonosConFiltrosAsync(AbonoFiltrosDto filtros)
     {
-        var abonos = await _unitOfWork.Abonos.GetAbonosWithFullRelationsAsync(filtros.ClienteId);
+        var abonos = await _unitOfWork.Abonos.GetAbonosWithFullRelationsAsync(filtros.IdCliente);
 
         // Aplicar filtros restantes en memoria
         var abonosFiltrados = abonos.Where(a =>
@@ -99,7 +99,7 @@ public class AbonoService : IAbonoService
 
         return new ResumenPagosClienteDto
         {
-            ClienteId = clienteId,
+            IdCliente = clienteId,
             NombreCliente = cliente.Nombre,
             TotalAbonos = abonos.Sum(a => a.MontoAbono),
             CantidadAbonos = abonos.Count(),
@@ -115,12 +115,12 @@ public class AbonoService : IAbonoService
     private async Task ValidarAbonoAsync(AbonoCreateDto abonoDto)
     {
         // Validar que el cliente existe y está activo
-        var cliente = await _unitOfWork.Clientes.GetByIdAsync(abonoDto.ClienteId);
+        var cliente = await _unitOfWork.Clientes.GetByIdAsync(abonoDto.IdCliente);
         if (cliente == null || !cliente.Activo)
             throw new BusinessException("El cliente seleccionado no existe o está inactivo");
 
         // Validar que el cliente tiene deuda pendiente
-        var deudaTotal = await _unitOfWork.Clientes.GetDeudaTotalAsync(abonoDto.ClienteId);
+        var deudaTotal = await _unitOfWork.Clientes.GetDeudaTotalAsync(abonoDto.IdCliente);
         if (deudaTotal <= 0)
             throw new BusinessException("El cliente no tiene deuda pendiente");
 

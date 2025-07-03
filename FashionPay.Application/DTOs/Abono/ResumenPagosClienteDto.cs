@@ -4,7 +4,7 @@ namespace FashionPay.Application.DTOs.Abono;
 
 public class ResumenPagosClienteDto
 {
-    public int ClienteId { get; set; }
+    public int IdCliente { get; set; }
     public string NombreCliente { get; set; } = string.Empty;
     public decimal TotalAbonos { get; set; }
     public int CantidadAbonos { get; set; }
