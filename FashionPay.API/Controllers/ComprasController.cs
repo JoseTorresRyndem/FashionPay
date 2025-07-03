@@ -126,9 +126,9 @@ public class ComprasController : ControllerBase
         {
             var compra = await _compraService.CrearCompraAsync(compraDto);
             _logger.LogInformation("Compra creada: {CompraId} - Cliente: {ClienteId} - Monto: ${MontoTotal:F2}",
-                compra.Id, compra.Cliente.Id, compra.MontoTotal);
+                compra.IdCompra, compra.Cliente.IdCliente, compra.MontoTotal);
 
-            return CreatedAtAction("GetCompra", new { id = compra.Id }, compra);
+            return CreatedAtAction("GetCompra", new { id = compra.IdCompra }, compra);
         }
         catch (BusinessException ex)
         {

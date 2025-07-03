@@ -164,9 +164,9 @@ public class ProductosController : ControllerBase
         try
         {
             var producto = await _productoService.CrearProductoAsync(productoDto);
-            _logger.LogInformation("Producto creado: {ProductoId} - {Codigo}", producto.Id, producto.Codigo);
+            _logger.LogInformation("Producto creado: {ProductoId} - {Codigo}", producto.IdProducto, producto.Codigo);
 
-            return CreatedAtAction("GetProducto", new { id = producto.Id }, producto);
+            return CreatedAtAction("GetProducto", new { id = producto.IdProducto }, producto);
         }
         catch (BusinessException ex)
         {
@@ -193,7 +193,7 @@ public class ProductosController : ControllerBase
         try
         {
             var producto = await _productoService.ActualizarProductoAsync(id, productoDto);
-            _logger.LogInformation("Producto atualizado con ID: {ProductoId} correctamente", producto.Id);
+            _logger.LogInformation("Producto atualizado con ID: {ProductoId} correctamente", producto.IdProducto);
 
             return Ok(producto);
         }

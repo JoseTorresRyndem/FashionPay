@@ -102,9 +102,9 @@ public class ProveedoresController : ControllerBase
         {
             var proveedor = await _proveedorService.CrearProveedorAsync(proveedorDto);
             _logger.LogInformation("Proveedor creado: {ProveedorId} - Nombre: {Nombre}",
-                proveedor.Id, proveedor.Nombre);
+                proveedor.IdProveedor, proveedor.Nombre);
 
-            return CreatedAtAction("GetProveedor", new { id = proveedor.Id }, proveedor);
+            return CreatedAtAction("GetProveedor", new { id = proveedor.IdProveedor }, proveedor);
         }
         catch (BusinessException ex)
         {
@@ -132,7 +132,7 @@ public class ProveedoresController : ControllerBase
         {
             var proveedor = await _proveedorService.ActualizarProveedorAsync(id, proveedorDto);
             _logger.LogInformation("Proveedor actualizado: {ProveedorId} - Nombre: {Nombre}",
-                proveedor.Id, proveedor.Nombre);
+                proveedor.IdProveedor, proveedor.Nombre);
 
             return Ok(proveedor);
         }

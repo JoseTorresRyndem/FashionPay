@@ -5,7 +5,7 @@ namespace FashionPay.Core.Entities;
 
 public partial class DetalleCompra
 {
-    public int Id { get; set; }
+    public int IdDetalleCompra { get; set; }
 
     public int IdCompra { get; set; }
 
@@ -17,7 +17,7 @@ public partial class DetalleCompra
 
     public decimal Subtotal { get; set; }
 
-    public virtual Compra Compra { get; set; } = null!;
+    public virtual Compra IdCompraNavigation { get; set; } = null!;
 
-    public virtual Producto Producto { get; set; } = null!;
+    public virtual Producto IdProductoNavigation { get; set; } = null!;
 }

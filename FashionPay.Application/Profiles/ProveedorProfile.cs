@@ -16,14 +16,14 @@ public class ProveedorProfile : Profile
 
         // Mapeo CreateDto → Entity
         CreateMap<ProveedorCreateDto, Proveedor>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore()) // Se genera automáticamente
+            .ForMember(dest => dest.IdProveedor, opt => opt.Ignore()) // Se genera automáticamente
             .ForMember(dest => dest.FechaRegistro, opt => opt.Ignore()) // Se asigna en el servicio
             .ForMember(dest => dest.Activo, opt => opt.Ignore()) // Se asigna en el servicio
             .ForMember(dest => dest.Productos, opt => opt.Ignore()); // Relación navegacional
 
         // Mapeo UpdateDto → Entity
         CreateMap<ProveedorUpdateDto, Proveedor>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore()) // No se actualiza
+            .ForMember(dest => dest.IdProveedor, opt => opt.Ignore()) // No se actualiza
             .ForMember(dest => dest.FechaRegistro, opt => opt.Ignore()) // No se actualiza
             .ForMember(dest => dest.Productos, opt => opt.Ignore()); // Relación navegacional
 

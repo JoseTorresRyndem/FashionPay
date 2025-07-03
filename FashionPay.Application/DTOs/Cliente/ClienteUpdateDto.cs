@@ -7,6 +7,7 @@ public class ClienteUpdateDto
     public string? Direccion { get; set; }
     public int DiaPago { get; set; }
     public decimal LimiteCredito { get; set; }
+
     public int CantidadMaximaPagos { get; set; }
     public int ToleranciasMorosidad { get; set; }
     public bool Activo { get; set; }

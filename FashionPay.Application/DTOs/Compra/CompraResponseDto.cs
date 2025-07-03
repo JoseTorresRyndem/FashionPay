@@ -2,7 +2,7 @@
 
 public class CompraResponseDto
 {
-    public int Id { get; set; }
+    public int IdCompra { get; set; }
     public string NumeroCompra { get; set; } = string.Empty;
     public DateTime FechaCompra { get; set; }
     public decimal MontoTotal { get; set; }

@@ -133,9 +133,9 @@ namespace FashionPay.API.Controllers
             try
             {
                 var cliente = await _clienteService.CrearClienteAsync(clienteDto);
-                _logger.LogInformation("Cliente creado: {ClienteId} - {Email}", cliente.Id, cliente.Email);
+                _logger.LogInformation("Cliente creado: {ClienteId} - {Email}", cliente.IdCliente, cliente.Email);
 
-                return CreatedAtAction("GetCliente", new { id = cliente.Id }, cliente);
+                return CreatedAtAction("GetCliente", new { id = cliente.IdCliente }, cliente);
             }
             catch (BusinessException ex)
             {

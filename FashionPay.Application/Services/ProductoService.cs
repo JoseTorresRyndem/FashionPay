@@ -27,7 +27,7 @@ public class ProductoService : IProductoService
         var productoCreado = await _unitOfWork.Productos.AddAsync(producto);
 
         // Obtener producto completo con proveedor
-        var productoCompleto = await _unitOfWork.Productos.GetByIdAsync(productoCreado.Id);
+        var productoCompleto = await _unitOfWork.Productos.GetByIdAsync(productoCreado.IdProducto);
         return _mapper.Map<ProductoResponseDto>(productoCompleto!);
     }
 

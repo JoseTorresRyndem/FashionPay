@@ -2,7 +2,7 @@
 
 public class PlanPagoBasicoDto
 {
-    public int Id { get; set; }
+    public int IdPlanPago { get; set; }
     public int IdCompra { get; set; }
     public string NumeroCompra { get; set; } = string.Empty;
     public int NumeroPago { get; set; }

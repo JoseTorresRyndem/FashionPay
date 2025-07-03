@@ -14,8 +14,8 @@ public class PlanPagoRepository : BaseRepository<PlanPago>, IPlanPagoRepository
     public async Task<IEnumerable<PlanPago>> GetPagosVencidosAsync()
     {
         return await _dbSet
-            .Include(pp => pp.Compra)
-                .ThenInclude(c => c.Cliente)
+            .Include(pp => pp.IdCompraNavigation)
+                .ThenInclude(c => c.IdClienteNavigation)
             .Where(pp => pp.Estado == "VENCIDO" && pp.SaldoPendiente > 0)
             .OrderBy(pp => pp.FechaVencimiento)
             .ToListAsync();
@@ -24,8 +24,8 @@ public class PlanPagoRepository : BaseRepository<PlanPago>, IPlanPagoRepository
     public async Task<IEnumerable<PlanPago>> GetPagosByClienteAsync(int clienteId)
     {
         return await _dbSet
-            .Include(pp => pp.Compra)
-            .Where(pp => pp.Compra.IdCliente == clienteId)
+            .Include(pp => pp.IdCompraNavigation)
+            .Where(pp => pp.IdCompraNavigation.IdCliente == clienteId)
             .OrderBy(pp => pp.FechaVencimiento)
             .ToListAsync();
     }
@@ -41,8 +41,8 @@ public class PlanPagoRepository : BaseRepository<PlanPago>, IPlanPagoRepository
     public async Task<PlanPago?> GetProximoPagoPendienteAsync(int clienteId)
     {
         return await _dbSet
-            .Include(pp => pp.Compra)
-            .Where(pp => pp.Compra.IdCliente == clienteId &&
+            .Include(pp => pp.IdCompraNavigation)
+            .Where(pp => pp.IdCompraNavigation.IdCliente == clienteId &&
                         pp.Estado == "PENDIENTE" &&
                         pp.SaldoPendiente > 0)
             .OrderBy(pp => pp.FechaVencimiento)

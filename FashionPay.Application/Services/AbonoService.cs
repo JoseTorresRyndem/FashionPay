@@ -38,7 +38,7 @@ public class AbonoService : IAbonoService
                 pagoPendiente);
 
             // 4. Retornar respuesta completa (responsabilidad del Service)
-            var abonoCompleto = await _unitOfWork.Abonos.GetByIdAsync(abono.Id);
+            var abonoCompleto = await _unitOfWork.Abonos.GetByIdAsync(abono.IdAbono);
             return _mapper.Map<AbonoResponseDto>(abonoCompleto!);
         }
         catch (Exception ex)

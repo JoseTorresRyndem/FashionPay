@@ -10,17 +10,17 @@ public class AbonoProfile : Profile
     {
         // Mapeo Abono → AbonoResponseDto
         CreateMap<Abono, AbonoResponseDto>()
-            .ForMember(dest => dest.Cliente, opt => opt.MapFrom(src => src.Cliente))
-            .ForMember(dest => dest.PlanPago, opt => opt.MapFrom(src => src.PlanPago));
+            .ForMember(dest => dest.Cliente, opt => opt.MapFrom(src => src.IdClienteNavigation))
+            .ForMember(dest => dest.PlanPago, opt => opt.MapFrom(src => src.IdPlanPagoNavigation));
 
         // Mapeo AbonoCreateDto → Abono
         CreateMap<AbonoCreateDto, Abono>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.IdAbono, opt => opt.Ignore())
             .ForMember(dest => dest.IdPlanPago, opt => opt.Ignore()) // Se asigna en el servicio
             .ForMember(dest => dest.NumeroRecibo, opt => opt.Ignore()) // Se genera automáticamente
             .ForMember(dest => dest.FechaAbono, opt => opt.MapFrom(src => DateTime.Now))
-            .ForMember(dest => dest.Cliente, opt => opt.Ignore())
-            .ForMember(dest => dest.PlanPago, opt => opt.Ignore());
+            .ForMember(dest => dest.IdClienteNavigation, opt => opt.Ignore())
+            .ForMember(dest => dest.IdPlanPagoNavigation, opt => opt.Ignore());
 
         // Mapeo Cliente → ClienteBasicoDto
         CreateMap<Cliente, ClienteBasicoAbonoDto>()
@@ -31,7 +31,7 @@ public class AbonoProfile : Profile
 
         // Mapeo PlanPago → PlanPagoBasicoDto
         CreateMap<PlanPago, PlanPagoBasicoDto>()
-            .ForMember(dest => dest.NumeroCompra, opt => opt.MapFrom(src => src.Compra.NumeroCompra))
+            .ForMember(dest => dest.NumeroCompra, opt => opt.MapFrom(src => src.IdCompraNavigation.NumeroCompra))
             .ForMember(dest => dest.FechaVencimiento, opt => opt.MapFrom(src => src.FechaVencimiento.ToDateTime(TimeOnly.MinValue)));
     }
 }

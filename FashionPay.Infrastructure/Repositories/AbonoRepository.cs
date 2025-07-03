@@ -16,32 +16,33 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
     public override async Task<Abono?> GetByIdAsync(int id)
     {
         return await _dbSet
-            .Include(a => a.Cliente)
+            .Include(a => a.IdClienteNavigation)
                 .ThenInclude(c => c.EstadoCuenta)
-            .Include(a => a.PlanPago)
-                .ThenInclude(pp => pp.Compra)
-                .OrderByDescending(a => a.FechaAbono)
-            .FirstOrDefaultAsync(a => a.Id == id);
+            .Include(a => a.IdPlanPagoNavigation)
+                .ThenInclude(pp => pp.IdCompraNavigation)
+                .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.IdAbono == id);
     }
 
     public async Task<IEnumerable<Abono>> GetAbonosByClienteAsync(int clienteId)
     {
         return await _dbSet
-            .Include(a => a.Cliente)
+            .Include(a => a.IdClienteNavigation)
                 .ThenInclude(c => c.EstadoCuenta)
-            .Include(a => a.PlanPago)
-                .ThenInclude(pp => pp.Compra)
+            .Include(a => a.IdPlanPagoNavigation)
+                .ThenInclude(pp => pp.IdCompraNavigation)
             .Where(a => a.IdCliente == clienteId)
+            .AsNoTracking()
             .OrderByDescending(a => a.FechaAbono)
             .ToListAsync();
     }
     public async Task<IEnumerable<Abono>> GetAbonosWithFullRelationsAsync(int? clienteId = null)
     {
         var query = _dbSet
-            .Include(a => a.Cliente)
+            .Include(a => a.IdClienteNavigation)
                 .ThenInclude(c => c.EstadoCuenta)
-            .Include(a => a.PlanPago)
-                .ThenInclude(pp => pp.Compra)
+            .Include(a => a.IdPlanPagoNavigation)
+                .ThenInclude(pp => pp.IdCompraNavigation)
             .AsQueryable();
 
         if (clienteId.HasValue)
@@ -50,6 +51,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
         }
 
         return await query
+            .AsNoTracking()
             .OrderByDescending(a => a.FechaAbono)
             .ToListAsync();
     }
@@ -59,8 +61,9 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
         var fechaFin = fechaInicio.AddDays(1);
 
         return await _dbSet
-            .Include(a => a.Cliente)
+            .Include(a => a.IdClienteNavigation)
             .Where(a => a.FechaAbono >= fechaInicio && a.FechaAbono < fechaFin)
+            .AsNoTracking()
             .OrderBy(a => a.FechaAbono)
             .ToListAsync();
     }
@@ -96,12 +99,15 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             // Obtener el ID del abono creado
             var abonoId = (int)abonoIdParameter.Value;
 
+            await VerificarYLiberarCreditoAsync(clienteId);
+
             var abono = await _dbSet
-                .Include(a => a.Cliente)
+                .Include(a => a.IdClienteNavigation)
                     .ThenInclude(c => c.EstadoCuenta)
-                .Include(a => a.PlanPago)
-                    .ThenInclude(pp => pp.Compra)
-                .FirstOrDefaultAsync(a => a.Id == abonoId);
+                .Include(a => a.IdPlanPagoNavigation)
+                    .ThenInclude(pp => pp.IdCompraNavigation)
+                    .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.IdAbono == abonoId);
 
             if (abono == null)
             {
@@ -117,6 +123,46 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
         catch (Exception ex)
         {
             throw new Exception($"Error al registrar abono: {ex.Message}");
+        }
+    }
+    private async Task VerificarYLiberarCreditoAsync(int clienteId)
+    {
+        try
+        {
+            // Buscar compras ACTIVAS del cliente que estén completamente pagadas
+            var comprasParaLiberar = await _context.Compras
+                .Include(c => c.PlanPagos)
+                .Where(c => c.IdCliente == clienteId && c.EstadoCompra == "ACTIVA")
+                .Where(c => c.PlanPagos.All(p => p.SaldoPendiente <= 0))
+                .ToListAsync();
+
+            foreach (var compra in comprasParaLiberar)
+            {
+                // Marcar compra como PAGADA
+                compra.EstadoCompra = "PAGADA";
+
+                // Liberar crédito del cliente
+                var cliente = await _context.Clientes
+                    .FirstOrDefaultAsync(cl => cl.IdCliente == clienteId);
+
+                if (cliente != null)
+                {
+                    cliente.CreditoDisponible += compra.MontoTotal;
+                    _context.Clientes.Update(cliente);
+                }
+
+                _context.Compras.Update(compra);
+            }
+
+            // Guardar cambios si hay compras para liberar
+            if (comprasParaLiberar.Any())
+            {
+                await _context.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error al liberar crédito: {ex.Message}");
         }
     }
 }
