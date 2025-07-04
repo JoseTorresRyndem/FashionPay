@@ -17,20 +17,18 @@ public class AbonoService : IAbonoService
         _mapper = mapper;
     }
 
-    public async Task<AbonoResponseDto> RegistrarAbonoAsync(AbonoCreateDto abonoDto)
+    public async Task<AbonoResponseDto> RegisterPaymentAsync(AbonoCreateDto abonoDto)
     {
         // 1. Validaciones de negocio
-        await ValidarAbonoAsync(abonoDto);
+        await ValidatePaymentAsync(abonoDto);
 
         // 2. Buscar el pago más antiguo pendiente del cliente (lógica de negocio)
-        var pagoPendiente = await BuscarPagoMasAntiguoPendienteAsync(abonoDto.IdCliente);
+        var pagoPendiente = await FindOldestPendingPaymentAsync(abonoDto.IdCliente);
         if (pagoPendiente == null)
             throw new BusinessException("El cliente no tiene pagos pendientes");
         try
         {
-
-            // 3. Delegar al Repository la aplicación completa (responsabilidad de datos)
-            var abono = await _unitOfWork.Abonos.AplicarAbonoCompletoAsync(
+            var abono = await _unitOfWork.Abonos.ApplyFullPaymentAsync(
                 abonoDto.IdCliente,
                 abonoDto.MontoAbono,
                 abonoDto.FormaPago,
@@ -48,26 +46,26 @@ public class AbonoService : IAbonoService
     }
 
 
-    public async Task<AbonoResponseDto?> GetAbonoByIdAsync(int id)
+    public async Task<AbonoResponseDto?> GetPaymentByIdAsync(int id)
     {
         var abono = await _unitOfWork.Abonos.GetByIdAsync(id);
         return abono != null ? _mapper.Map<AbonoResponseDto>(abono) : null;
     }
 
-    public async Task<IEnumerable<AbonoResponseDto>> GetAbonosByClienteAsync(int clienteId)
+    public async Task<IEnumerable<AbonoResponseDto>> GetPaymentsByClientAsync(int clienteId)
     {
         // Validar que el cliente existe
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(clienteId);
         if (cliente == null)
             throw new NotFoundException($"Cliente con ID {clienteId} no encontrado");
 
-        var abonos = await _unitOfWork.Abonos.GetAbonosByClienteAsync(clienteId);
+        var abonos = await _unitOfWork.Abonos.GetPaymentsByClientAsync(clienteId);
         return _mapper.Map<IEnumerable<AbonoResponseDto>>(abonos);
     }
 
-    public async Task<IEnumerable<AbonoResponseDto>> GetAbonosConFiltrosAsync(AbonoFiltrosDto filtros)
+    public async Task<IEnumerable<AbonoResponseDto>> GetPaymentsWithFiltersAsync(AbonoFiltrosDto filtros)
     {
-        var abonos = await _unitOfWork.Abonos.GetAbonosWithFullRelationsAsync(filtros.IdCliente);
+        var abonos = await _unitOfWork.Abonos.GetPaymentsWithFullRelationsAsync(filtros.IdCliente);
 
         // Aplicar filtros restantes en memoria
         var abonosFiltrados = abonos.Where(a =>
@@ -81,7 +79,7 @@ public class AbonoService : IAbonoService
         return _mapper.Map<IEnumerable<AbonoResponseDto>>(abonosFiltrados);
     }
 
-    public async Task<ResumenPagosClienteDto> GetResumenPagosClienteAsync(int clienteId)
+    public async Task<ResumenPagosClienteDto> GetClientPaymentSummaryAsync(int clienteId)
     {
         // Validar que el cliente existe
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(clienteId);
@@ -89,13 +87,13 @@ public class AbonoService : IAbonoService
             throw new NotFoundException($"Cliente con ID {clienteId} no encontrado");
 
         // Obtener abonos del cliente
-        var abonos = await _unitOfWork.Abonos.GetAbonosByClienteAsync(clienteId);
+        var abonos = await _unitOfWork.Abonos.GetPaymentsByClientAsync(clienteId);
 
         // Obtener pagos pendientes del cliente
-        var pagosPendientes = await _unitOfWork.PlanPagos.GetPagosByClienteAsync(clienteId);
+        var pagosPendientes = await _unitOfWork.PlanPagos.GetPaymentsByClientAsync(clienteId);
 
         // Obtener estado de cuenta
-        var estadoCuenta = await _unitOfWork.Clientes.GetEstadoCuentaAsync(clienteId);
+        var estadoCuenta = await _unitOfWork.Clientes.GetAccountStatusAsync(clienteId);
 
         return new ResumenPagosClienteDto
         {
@@ -112,7 +110,7 @@ public class AbonoService : IAbonoService
 
     #region Métodos privados (Solo lógica de negocio)
 
-    private async Task ValidarAbonoAsync(AbonoCreateDto abonoDto)
+    private async Task ValidatePaymentAsync(AbonoCreateDto abonoDto)
     {
         // Validar que el cliente existe y está activo
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(abonoDto.IdCliente);
@@ -120,7 +118,7 @@ public class AbonoService : IAbonoService
             throw new BusinessException("El cliente seleccionado no existe o está inactivo");
 
         // Validar que el cliente tiene deuda pendiente
-        var deudaTotal = await _unitOfWork.Clientes.GetDeudaTotalAsync(abonoDto.IdCliente);
+        var deudaTotal = await _unitOfWork.Clientes.GetTotalDebtAsync(abonoDto.IdCliente);
         if (deudaTotal <= 0)
             throw new BusinessException("El cliente no tiene deuda pendiente");
 
@@ -134,9 +132,9 @@ public class AbonoService : IAbonoService
             throw new BusinessException("Forma de pago no válida");
     }
 
-    private async Task<PlanPago?> BuscarPagoMasAntiguoPendienteAsync(int clienteId)
+    private async Task<PlanPago?> FindOldestPendingPaymentAsync(int clienteId)
     {
-        var pagosPendientes = await _unitOfWork.PlanPagos.GetPagosByClienteAsync(clienteId);
+        var pagosPendientes = await _unitOfWork.PlanPagos.GetPaymentsByClientAsync(clienteId);
 
         return pagosPendientes
             .Where(p => p.SaldoPendiente > 0)

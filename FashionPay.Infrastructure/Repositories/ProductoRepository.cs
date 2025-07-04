@@ -11,7 +11,7 @@ public class ProductoRepository : BaseRepository<Producto>, IProductoRepository
     {
     }
 
-    public async Task<IEnumerable<Producto>> GetProductosActivosAsync()
+    public async Task<IEnumerable<Producto>> GetProductsActiveAsync()
     {
         return await _dbSet
             .Include(p => p.IdProveedorNavigation)
@@ -20,7 +20,7 @@ public class ProductoRepository : BaseRepository<Producto>, IProductoRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Producto>> GetProductosByProveedorAsync(int proveedorId)
+    public async Task<IEnumerable<Producto>> GetProductsByProviderAsync(int proveedorId)
     {
         return await _dbSet
             .Include(p => p.IdProveedorNavigation)
@@ -29,14 +29,14 @@ public class ProductoRepository : BaseRepository<Producto>, IProductoRepository
             .ToListAsync();
     }
 
-    public async Task<Producto?> GetByCodigoAsync(string codigo)
+    public async Task<Producto?> GetByCodeAsync(string codigo)
     {
         return await _dbSet
             .Include(p => p.IdProveedorNavigation)
             .FirstOrDefaultAsync(p => p.Codigo == codigo);
     }
 
-    public async Task<IEnumerable<Producto>> BuscarProductosAsync(string termino)
+    public async Task<IEnumerable<Producto>> SearchProductsAsync(string termino)
     {
         return await _dbSet
             .Include(p => p.IdProveedorNavigation)

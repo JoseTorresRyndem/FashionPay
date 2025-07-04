@@ -17,10 +17,10 @@ public class ProductoService : IProductoService
         _mapper = mapper;
     }
 
-    public async Task<ProductoResponseDto> CrearProductoAsync(ProductoCreateDto productoDto)
+    public async Task<ProductoResponseDto> CreateProductAsync(ProductoCreateDto productoDto)
     {
         // Validaciones de negocio
-        await ValidarCreacionProductoAsync(productoDto);
+        await ValidateCreationProductAsync(productoDto);
 
         // Mapear y crear
         var producto = _mapper.Map<Producto>(productoDto);
@@ -31,47 +31,45 @@ public class ProductoService : IProductoService
         return _mapper.Map<ProductoResponseDto>(productoCompleto!);
     }
 
-    public async Task<ProductoResponseDto?> GetProductoByIdAsync(int id)
+    public async Task<ProductoResponseDto?> GetProductByIdAsync(int id)
     {
         var producto = await _unitOfWork.Productos.GetByIdAsync(id);
         return producto != null ? _mapper.Map<ProductoResponseDto>(producto) : null;
     }
 
-    public async Task<ProductoResponseDto?> GetProductoByCodigoAsync(string codigo)
+    public async Task<ProductoResponseDto?> GetProductByCodeAsync(string codigo)
     {
-        var producto = await _unitOfWork.Productos.GetByCodigoAsync(codigo);
+        var producto = await _unitOfWork.Productos.GetByCodeAsync(codigo);
         return producto != null ? _mapper.Map<ProductoResponseDto>(producto) : null;
     }
 
-    public async Task<IEnumerable<ProductoResponseDto>> GetProductosActivosAsync()
+    public async Task<IEnumerable<ProductoResponseDto>> GetProductsActiveAsync()
     {
-        var productos = await _unitOfWork.Productos.GetProductosActivosAsync();
+        var productos = await _unitOfWork.Productos.GetProductsActiveAsync();
         return _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
     }
 
-    public async Task<IEnumerable<ProductoResponseDto>?> GetProductosByProveedorAsync(int proveedorId)
+    public async Task<IEnumerable<ProductoResponseDto>?> GetProductsByProviderAsync(int proveedorId)
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(proveedorId);
-        var productos = await _unitOfWork.Productos.GetProductosByProveedorAsync(proveedorId);
+        var productos = await _unitOfWork.Productos.GetProductsByProviderAsync(proveedorId);
         return productos != null ? _mapper.Map<IEnumerable<ProductoResponseDto>>(productos) : null;
     }
 
-    public async Task<IEnumerable<ProductoResponseDto>> BuscarProductosAsync(string termino)
+    public async Task<IEnumerable<ProductoResponseDto>> SearchProductsAsync(string termino)
     {
-        var productos = await _unitOfWork.Productos.BuscarProductosAsync(termino);
+        var productos = await _unitOfWork.Productos.SearchProductsAsync(termino);
         return _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
     }
 
-    public async Task<ProductoResponseDto> ActualizarProductoAsync(int id, ProductoUpdateDto productoDto)
+    public async Task<ProductoResponseDto> UpdateProductAsync(int id, ProductoUpdateDto productoDto)
     {
         var producto = await _unitOfWork.Productos.GetByIdAsync(id);
         if (producto == null)
             throw new NotFoundException($"Producto con ID {id} no encontrado");
 
-        // Validaciones de negocio
-        await ValidarActualizacionProductoAsync(id, productoDto);
+        await ValidateUpdatingProductAsync(id, productoDto);
 
-        // Mapear cambios y actualizar
         _mapper.Map(productoDto, producto);
         await _unitOfWork.Productos.UpdateAsync(producto);
 
@@ -80,7 +78,7 @@ public class ProductoService : IProductoService
         return _mapper.Map<ProductoResponseDto>(productoActualizado!);
     }
 
-    public async Task<bool> EliminarProductoAsync(int id)
+    public async Task<bool> DeleteProductAsync(int id)
     {
         var producto = await _unitOfWork.Productos.GetByIdAsync(id);
         if (producto == null)
@@ -94,22 +92,19 @@ public class ProductoService : IProductoService
 
         return true;
     }
-    private async Task ValidarCreacionProductoAsync(ProductoCreateDto productoDto)
+    private async Task ValidateCreationProductAsync(ProductoCreateDto productoDto)
     {
-        // Validar que el proveedor existe y está activo
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(productoDto.IdProveedor);
         if (proveedor == null || !proveedor.Activo)
             throw new BusinessException("El proveedor seleccionado no existe o está inactivo");
 
-        // Validar código único
-        var productoExistente = await _unitOfWork.Productos.GetByCodigoAsync(productoDto.Codigo);
+        var productoExistente = await _unitOfWork.Productos.GetByCodeAsync(productoDto.Codigo);
         if (productoExistente != null)
             throw new BusinessException($"Ya existe un producto con el código '{productoDto.Codigo}'");
     }
 
-    private async Task ValidarActualizacionProductoAsync(int id, ProductoUpdateDto productoDto)
+    private async Task ValidateUpdatingProductAsync(int id, ProductoUpdateDto productoDto)
     {
-        // Validar que el proveedor existe y está activo
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(productoDto.IdProveedor);
         if (proveedor == null || !proveedor.Activo)
             throw new BusinessException("El proveedor seleccionado no existe o está inactivo");

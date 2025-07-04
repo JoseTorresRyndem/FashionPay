@@ -4,8 +4,8 @@ namespace FashionPay.Core.Interfaces;
 
 public interface IPlanPagoRepository : IBaseRepository<PlanPago>
 {
-    Task<IEnumerable<PlanPago>> GetPagosVencidosAsync();
-    Task<IEnumerable<PlanPago>> GetPagosByClienteAsync(int clienteId);
-    Task<IEnumerable<PlanPago>> GetPagosByCompraAsync(int compraId);
-    Task<PlanPago?> GetProximoPagoPendienteAsync(int clienteId);
+    Task<IEnumerable<PlanPago>> GetOverduePaymentsAsync();
+    Task<IEnumerable<PlanPago>> GetPaymentsByClientAsync(int clientId);
+    Task<IEnumerable<PlanPago>> GetPaymentsByPurchaseAsync(int purchaseId);
+    Task<PlanPago?> GetNextPendingPaymentAsync(int clientId);
 }

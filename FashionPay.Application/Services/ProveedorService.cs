@@ -17,32 +17,31 @@ public class ProveedorService : IProveedorService
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<ProveedorResponseDto>> GetProveedoresAsync()
+    public async Task<IEnumerable<ProveedorResponseDto>> GetProvidersAsync()
     {
         var proveedores = await _unitOfWork.Proveedores.GetAllAsync();
         var proveedoresDto = _mapper.Map<IEnumerable<ProveedorResponseDto>>(proveedores);
 
-        // Enriquecer con información adicional
         foreach (var proveedorDto in proveedoresDto)
         {
-            await EnriquecerProveedorAsync(proveedorDto);
+            await InfoProductsByProveedorAsync(proveedorDto);
         }
 
         return proveedoresDto.OrderBy(p => p.Nombre);
     }
 
-    public async Task<ProveedorResponseDto?> GetProveedorByIdAsync(int id)
+    public async Task<ProveedorResponseDto?> GetProviderByIdAsync(int id)
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(id);
         if (proveedor == null) return null;
 
         var proveedorDto = _mapper.Map<ProveedorResponseDto>(proveedor);
-        await EnriquecerProveedorAsync(proveedorDto);
+        await InfoProductsByProveedorAsync(proveedorDto);
 
         return proveedorDto;
     }
 
-    public async Task<IEnumerable<ProveedorResponseDto>> GetProveedoresConFiltrosAsync(ProveedorFiltrosDto filtros)
+    public async Task<IEnumerable<ProveedorResponseDto>> GetProvidersWithFiltersAsync(ProveedorFiltrosDto filtros)
     {
         var query = await _unitOfWork.Proveedores.GetAllAsync();
 
@@ -56,36 +55,34 @@ public class ProveedorService : IProveedorService
             (!filtros.FechaRegistroHasta.HasValue || p.FechaRegistro <= filtros.FechaRegistroHasta.Value)
         );
 
-        var resultado = _mapper.Map<IEnumerable<ProveedorResponseDto>>(proveedoresFiltrados);
+        var resultProvider = _mapper.Map<IEnumerable<ProveedorResponseDto>>(proveedoresFiltrados);
 
         // Si se requieren solo proveedores con productos
         if (filtros.ConProductos)
         {
             var resultadoConProductos = new List<ProveedorResponseDto>();
-            foreach (var proveedor in resultado)
+            foreach (var proveedor in resultProvider)
             {
-                await EnriquecerProveedorAsync(proveedor);
+                await InfoProductsByProveedorAsync(proveedor);
                 if (proveedor.TotalProductos > 0)
                 {
                     resultadoConProductos.Add(proveedor);
                 }
             }
-            return resultadoConProductos.OrderBy(p => p.Nombre);
+            return resultadoConProductos;
         }
 
-        // Enriquecer todos
-        foreach (var proveedor in resultado)
+        foreach (var proveedor in resultProvider)
         {
-            await EnriquecerProveedorAsync(proveedor);
+            await InfoProductsByProveedorAsync(proveedor);
         }
 
-        return resultado.OrderBy(p => p.Nombre);
+        return resultProvider;
     }
 
-    public async Task<ProveedorResponseDto> CrearProveedorAsync(ProveedorCreateDto proveedorDto)
+    public async Task<ProveedorResponseDto> CreateProviderAsync(ProveedorCreateDto proveedorDto)
     {
-        // Validaciones de negocio
-        await ValidarProveedorAsync(proveedorDto);
+        await ValidateProviderAsync(proveedorDto);
 
         var proveedor = _mapper.Map<Proveedor>(proveedorDto);
         proveedor.FechaRegistro = DateTime.Now;
@@ -95,40 +92,38 @@ public class ProveedorService : IProveedorService
         await _unitOfWork.SaveChangesAsync();
 
         var resultado = _mapper.Map<ProveedorResponseDto>(proveedorCreado);
-        await EnriquecerProveedorAsync(resultado);
+        await InfoProductsByProveedorAsync(resultado);
 
         return resultado;
     }
 
-    public async Task<ProveedorResponseDto> ActualizarProveedorAsync(int id, ProveedorUpdateDto proveedorDto)
+    public async Task<ProveedorResponseDto> UpdateProviderAsync(int id, ProveedorUpdateDto proveedorDto)
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(id);
         if (proveedor == null)
             throw new NotFoundException($"Proveedor con ID {id} no encontrado");
 
-        // Validaciones de negocio
-        await ValidarProveedorActualizacionAsync(proveedorDto, id);
+        await ValidProviderUpdateAsync(proveedorDto, id);
 
-        // Mapear cambios
         _mapper.Map(proveedorDto, proveedor);
 
         await _unitOfWork.Proveedores.UpdateAsync(proveedor);
         await _unitOfWork.SaveChangesAsync();
 
         var resultado = _mapper.Map<ProveedorResponseDto>(proveedor);
-        await EnriquecerProveedorAsync(resultado);
+        await InfoProductsByProveedorAsync(resultado);
 
         return resultado;
     }
 
-    public async Task DesactivarProveedorAsync(int id)
+    public async Task DesactivateProviderAsync(int id)
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(id);
         if (proveedor == null)
             throw new NotFoundException($"Proveedor con ID {id} no encontrado");
 
         // Validar que no tenga productos activos
-        var productosActivos = await _unitOfWork.Proveedores.GetProveedorWithProductosAsync(id);
+        var productosActivos = await _unitOfWork.Proveedores.GetProviderWithProductsAsync(id);
         if (productosActivos != null)
         {
             throw new BusinessException($"No se puede desactivar el proveedor porque tiene {productosActivos.Productos.Count()} productos activos. Desactive primero todos sus productos.");
@@ -139,7 +134,7 @@ public class ProveedorService : IProveedorService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task<ProveedorResponseDto> ReactivarProveedorAsync(int id)
+    public async Task<ProveedorResponseDto> ReactivateProviderAsync(int id)
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(id);
         if (proveedor == null)
@@ -150,30 +145,24 @@ public class ProveedorService : IProveedorService
         await _unitOfWork.SaveChangesAsync();
 
         var resultado = _mapper.Map<ProveedorResponseDto>(proveedor);
-        await EnriquecerProveedorAsync(resultado);
+        await InfoProductsByProveedorAsync(resultado);
 
         return resultado;
     }
 
-    public async Task<bool> ExisteProveedorAsync(int id)
+    public async Task<bool> ExistProviderAsync(int id)
     {
         return await _unitOfWork.Proveedores.GetByIdAsync(id) != null;
     }
 
-    public async Task<bool> ExisteProveedorPorNombreAsync(string nombre, int? excludeId = null)
-    {
-        var proveedores = await _unitOfWork.Proveedores.GetAllAsync();
-        return proveedores.Any(p =>
-            p.Nombre.Equals(nombre, StringComparison.OrdinalIgnoreCase) &&
-            (!excludeId.HasValue || p.IdProveedor != excludeId.Value));
-    }
+
 
     #region Métodos privados
 
-    private async Task ValidarProveedorAsync(ProveedorCreateDto proveedorDto)
+    private async Task ValidateProviderAsync(ProveedorCreateDto proveedorDto)
     {
         // Validar nombre único
-        if (await ExisteProveedorPorNombreAsync(proveedorDto.Nombre))
+        if (await ExistProviderByNameAsync(proveedorDto.Nombre))
             throw new BusinessException($"Ya existe un proveedor con el nombre '{proveedorDto.Nombre}'");
 
         // Validar email único si se proporciona
@@ -185,10 +174,10 @@ public class ProveedorService : IProveedorService
         }
     }
 
-    private async Task ValidarProveedorActualizacionAsync(ProveedorUpdateDto proveedorDto, int id)
+    private async Task ValidProviderUpdateAsync(ProveedorUpdateDto proveedorDto, int id)
     {
         // Validar nombre único
-        if (await ExisteProveedorPorNombreAsync(proveedorDto.Nombre, id))
+        if (await ExistProviderByNameAsync(proveedorDto.Nombre, id))
             throw new BusinessException($"Ya existe otro proveedor con el nombre '{proveedorDto.Nombre}'");
 
         // Validar email único si se proporciona
@@ -201,15 +190,21 @@ public class ProveedorService : IProveedorService
         }
     }
 
-    private async Task EnriquecerProveedorAsync(ProveedorResponseDto proveedorDto)
+    private async Task InfoProductsByProveedorAsync(ProveedorResponseDto proveedorDto)
     {
-        var productos = await _unitOfWork.Productos.GetProductosByProveedorAsync(proveedorDto.IdProveedor);
+        var productos = await _unitOfWork.Productos.GetProductsByProviderAsync(proveedorDto.IdProveedor);
         var productosLista = productos.ToList();
 
         proveedorDto.TotalProductos = productosLista.Count;
         proveedorDto.ValorInventario = productosLista.Sum(p => p.Precio * p.Stock);
         proveedorDto.UltimaActualizacion = DateTime.Now;
     }
-
+    private async Task<bool> ExistProviderByNameAsync(string nombre, int? excludeId = null)
+    {
+        var proveedores = await _unitOfWork.Proveedores.GetAllAsync();
+        return proveedores.Any(p =>
+            p.Nombre.Equals(nombre, StringComparison.OrdinalIgnoreCase) &&
+            (!excludeId.HasValue || p.IdProveedor != excludeId.Value));
+    }
     #endregion
 }

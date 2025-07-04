@@ -4,6 +4,6 @@ namespace FashionPay.Core.Interfaces;
 
 public interface IProveedorRepository : IBaseRepository<Proveedor>
 {
-    Task<IEnumerable<Proveedor>> GetProveedoresActivosAsync();
-    Task<Proveedor?> GetProveedorWithProductosAsync(int proveedorId);
+    Task<IEnumerable<Proveedor>> GetProviderActiveAsync();
+    Task<Proveedor?> GetProviderWithProductsAsync(int proveedorId);
 }

@@ -5,9 +5,10 @@ namespace FashionPay.Application.Services;
 
 public interface IAbonoService
 {
-    Task<AbonoResponseDto> RegistrarAbonoAsync(AbonoCreateDto abonoDto);
-    Task<AbonoResponseDto?> GetAbonoByIdAsync(int id);
-    Task<IEnumerable<AbonoResponseDto>> GetAbonosByClienteAsync(int clienteId);
-    Task<IEnumerable<AbonoResponseDto>> GetAbonosConFiltrosAsync(AbonoFiltrosDto filtros);
-    Task<ResumenPagosClienteDto> GetResumenPagosClienteAsync(int clienteId);
+    Task<AbonoResponseDto> RegisterPaymentAsync(AbonoCreateDto paymentDto);
+    Task<AbonoResponseDto?> GetPaymentByIdAsync(int id);
+    Task<IEnumerable<AbonoResponseDto>> GetPaymentsByClientAsync(int clientId);
+    Task<IEnumerable<AbonoResponseDto>> GetPaymentsWithFiltersAsync(AbonoFiltrosDto filters);
+    Task<ResumenPagosClienteDto> GetClientPaymentSummaryAsync(int clientId);
+
 }

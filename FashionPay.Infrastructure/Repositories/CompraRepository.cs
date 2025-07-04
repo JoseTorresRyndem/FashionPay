@@ -34,7 +34,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             .FirstOrDefaultAsync(c => c.IdCompra == id);
     }
     // Método para obtener compra por ID cliente con relaciones
-    public async Task<IEnumerable<Compra>> GetByClienteWithRelationsAsync(int clienteId)
+    public async Task<IEnumerable<Compra>> GetByClientWithRelationsAsync(int clienteId)
     {
         return await _context.Compras
             .Include(c => c.IdClienteNavigation)
@@ -46,7 +46,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             .OrderByDescending(c => c.FechaCompra)
             .ToListAsync();
     }
-    public async Task<IEnumerable<Compra>> GetComprasWithFiltrosAsync(
+    public async Task<IEnumerable<Compra>> GetPurchasesWithFiltersAsync(
         int? clienteId = null,
         DateTime? fechaDesde = null,
         DateTime? fechaHasta = null,
@@ -82,7 +82,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             .OrderByDescending(c => c.FechaCompra)
             .ToListAsync();
     }
-    public async Task<Compra> CrearCompraAsync(
+    public async Task<Compra> CreatePurchaseAsync(
         int clienteId,
         int cantidadPagos,
         string? observaciones,
@@ -149,7 +149,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
                 var compra = new Compra
                 {
                     IdCliente = clienteId,
-                    NumeroCompra = GenerarNumeroCompra(),
+                    NumeroCompra = GeneratePurchaseNumber(),
                     FechaCompra = DateTime.Now,
                     MontoTotal = montoTotal,
                     CantidadPagos = cantidadPagos,
@@ -166,7 +166,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
                 _context.Clientes.Update(cliente);
                 await _context.SaveChangesAsync();
 
-                var planPagos = CalcularPlanPagos(
+                var planPagos = CalculatePaymentPlan(
                     compra.IdCompra,
                     montoTotal,
                     cantidadPagos,
@@ -175,7 +175,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
                 _context.PlanPagos.AddRange(planPagos);
                 await _context.SaveChangesAsync();
 
-                await ActualizarEstadoCuentaClienteAsync(clienteId);
+                await UpdateClientAccountStatusAsync(clienteId);
 
                 await transaction.CommitAsync();
 
@@ -190,16 +190,16 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
         });
     }
     //Métodos privados para calcular los planes de pago y montos
-    private List<PlanPago> CalcularPlanPagos(int compraId, decimal montoTotal, int cantidadPagos, int diaPagoCliente)
+    private List<PlanPago> CalculatePaymentPlan(int compraId, decimal montoTotal, int cantidadPagos, int diaPagoCliente)
     {
         // Calcular montos exactos (evitar errores de redondeo)
-        var montosPago = CalcularMontosExactos(montoTotal, cantidadPagos);
+        var montosPago = CalculateExactAmounts(montoTotal, cantidadPagos);
         var planPagos = new List<PlanPago>();
         var fechaBase = DateTime.Today;
 
         for (int i = 0; i < cantidadPagos; i++)
         {
-            var fechaVencimiento = CalcularFechaVencimiento(fechaBase, i + 1, diaPagoCliente);
+            var fechaVencimiento = CalculateDueDate(fechaBase, i + 1, diaPagoCliente);
 
             planPagos.Add(new PlanPago
             {
@@ -215,7 +215,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
 
         return planPagos;
     }
-    private List<decimal> CalcularMontosExactos(decimal montoTotal, int cantidadPagos)
+    private List<decimal> CalculateExactAmounts(decimal montoTotal, int cantidadPagos)
     {
         // Monto base por pago (redondeado hacia abajo a centavos)
         var montoBase = Math.Floor(montoTotal / cantidadPagos * 100) / 100;
@@ -252,7 +252,7 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
 
         return pagos;
     }
-    private DateOnly CalcularFechaVencimiento(DateTime fechaBase, int numeroPago, int diaPago)
+    private DateOnly CalculateDueDate(DateTime fechaBase, int numeroPago, int diaPago)
     {
         var fechaVencimiento = fechaBase.AddMonths(numeroPago);
 
@@ -263,11 +263,11 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
         var fechaCalculada = new DateTime(fechaVencimiento.Year, fechaVencimiento.Month, diaEfectivo);
         return DateOnly.FromDateTime(fechaCalculada);
     }
-    private string GenerarNumeroCompra()
+    private string GeneratePurchaseNumber()
     {
         return $"CMP-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
     }
-    private async Task ActualizarEstadoCuentaClienteAsync(int clienteId)
+    private async Task UpdateClientAccountStatusAsync(int clienteId)
     {
         // Ejecutar procedimiento almacenado para recalcular estado
         await _context.Database.ExecuteSqlRawAsync(

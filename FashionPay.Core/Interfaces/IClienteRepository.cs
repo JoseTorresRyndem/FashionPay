@@ -4,12 +4,12 @@ namespace FashionPay.Core.Interfaces;
 public interface IClienteRepository : IBaseRepository<Cliente>
 {
     Task<Cliente?> GetByEmailAsync(string email);
-    Task<decimal> GetDeudaTotalAsync(int clienteId);
-    Task<EstadoCuenta?> GetEstadoCuentaAsync(int clienteId);
-    Task<IEnumerable<Cliente>> GetClientesByClasificacionAsync(string clasificacion);
-    Task ExecuteCalcularSaldoAsync(int clienteId);
-    Task<Cliente> CrearClienteConEstadoCuentaAsync(
-        string nombre,
+    Task<decimal> GetTotalDebtAsync(int clientId);
+    Task<EstadoCuenta?> GetAccountStatusAsync(int clientId);
+    Task<IEnumerable<Cliente>> GetClientsByClassificationAsync(string classification);
+    Task ExecuteCalculateBalanceAsync(int clientId);
+    Task<Cliente> CreateClientWithAccountStatusAsync(
+            string nombre,
         string email,
         string? telefono,
         string? direccion,

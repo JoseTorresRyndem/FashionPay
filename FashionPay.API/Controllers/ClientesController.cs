@@ -30,7 +30,7 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var clientes = await _clienteService.GetClientesAsync();
+                var clientes = await _clienteService.GetClientsAsync();
                 _logger.LogInformation("Se obtuvieron {Count} clientes", clientes.Count());
                 return Ok(clientes);
             }
@@ -51,7 +51,7 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var cliente = await _clienteService.GetClienteByIdAsync(id);
+                var cliente = await _clienteService.GetClientByIdAsync(id);
                 if (cliente == null)
                 {
                     _logger.LogWarning("Cliente con ID {ClienteId} no encontrado", id);
@@ -78,7 +78,7 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var cliente = await _clienteService.GetClienteByEmailAsync(email);
+                var cliente = await _clienteService.GetClientByEmailAsync(email);
                 if (cliente == null)
                 {
                     _logger.LogWarning("Cliente con email {Email} no encontrado", email);
@@ -104,7 +104,7 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var clientes = await _clienteService.GetClientesByClasificacionAsync(clasificacion);
+                var clientes = await _clienteService.GetClientsByClassificationAsync(clasificacion);
                 _logger.LogInformation("Se obtuvieron {Count} clientes con clasificación {Clasificacion}",
                     clientes.Count(), clasificacion.ToUpper());
 
@@ -132,7 +132,7 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var cliente = await _clienteService.CrearClienteAsync(clienteDto);
+                var cliente = await _clienteService.CreateClientAsync(clienteDto);
                 _logger.LogInformation("Cliente creado: {ClienteId} - {Email}", cliente.IdCliente, cliente.Email);
 
                 return CreatedAtAction("GetCliente", new { id = cliente.IdCliente }, cliente);
@@ -162,7 +162,7 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                var cliente = await _clienteService.ActualizarClienteAsync(id, clienteDto);
+                var cliente = await _clienteService.UpdateClientAsync(id, clienteDto);
                 _logger.LogInformation("Cliente actualizado: {ClienteId}", id);
 
                 return Ok(cliente);
@@ -197,7 +197,7 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                await _clienteService.EliminarClienteAsync(id);
+                await _clienteService.DeleteClientAsync(id);
                 _logger.LogInformation("Cliente eliminado: {ClienteId}", id);
 
                 return NoContent();
@@ -231,7 +231,7 @@ namespace FashionPay.API.Controllers
         {
             try
             {
-                await _clienteService.RecalcularSaldoAsync(id);
+                await _clienteService.RecalculateBalanceAsync(id);
                 _logger.LogInformation("Saldo recalculado para cliente: {ClienteId}", id);
 
                 return Ok(new

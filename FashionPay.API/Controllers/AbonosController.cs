@@ -29,7 +29,7 @@ public class AbonosController : ControllerBase
     {
         try
         {
-            var abonos = await _abonoService.GetAbonosConFiltrosAsync(filtros);
+            var abonos = await _abonoService.GetPaymentsWithFiltersAsync(filtros);
             _logger.LogInformation("Se obtuvieron {Count} abonos", abonos.Count());
             return Ok(abonos);
         }
@@ -51,7 +51,7 @@ public class AbonosController : ControllerBase
     {
         try
         {
-            var abono = await _abonoService.GetAbonoByIdAsync(id);
+            var abono = await _abonoService.GetPaymentByIdAsync(id);
             if (abono == null)
             {
                 _logger.LogWarning("Abono con ID {AbonoId} no encontrado", id);
@@ -78,7 +78,7 @@ public class AbonosController : ControllerBase
     {
         try
         {
-            var abonos = await _abonoService.GetAbonosByClienteAsync(clienteId);
+            var abonos = await _abonoService.GetPaymentsByClientAsync(clienteId);
             _logger.LogInformation("Se obtuvieron {Count} abonos para el cliente {ClienteId}",
                 abonos.Count(), clienteId);
 
@@ -107,7 +107,7 @@ public class AbonosController : ControllerBase
     {
         try
         {
-            var resumen = await _abonoService.GetResumenPagosClienteAsync(clienteId);
+            var resumen = await _abonoService.GetClientPaymentSummaryAsync(clienteId);
             _logger.LogInformation("Resumen generado para cliente {ClienteId}", clienteId);
 
             return Ok(resumen);
@@ -135,7 +135,7 @@ public class AbonosController : ControllerBase
     {
         try
         {
-            var abono = await _abonoService.RegistrarAbonoAsync(abonoDto);
+            var abono = await _abonoService.RegisterPaymentAsync(abonoDto);
             _logger.LogInformation("Abono registrado: {AbonoId} - Cliente: {ClienteId} - Monto: ${MontoAbono:F2}",
                 abono.IdAbono, abono.Cliente.IdCliente, abono.MontoAbono);
 

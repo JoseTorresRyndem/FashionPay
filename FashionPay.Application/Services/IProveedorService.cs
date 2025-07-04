@@ -4,13 +4,12 @@ namespace FashionPay.Application.Services;
 
 public interface IProveedorService
 {
-    Task<IEnumerable<ProveedorResponseDto>> GetProveedoresAsync();
-    Task<ProveedorResponseDto?> GetProveedorByIdAsync(int id);
-    Task<IEnumerable<ProveedorResponseDto>> GetProveedoresConFiltrosAsync(ProveedorFiltrosDto filtros);
-    Task<ProveedorResponseDto> CrearProveedorAsync(ProveedorCreateDto proveedorDto);
-    Task<ProveedorResponseDto> ActualizarProveedorAsync(int id, ProveedorUpdateDto proveedorDto);
-    Task DesactivarProveedorAsync(int id);
-    Task<ProveedorResponseDto> ReactivarProveedorAsync(int id);
-    Task<bool> ExisteProveedorAsync(int id);
-    Task<bool> ExisteProveedorPorNombreAsync(string nombre, int? excludeId = null);
+    Task<IEnumerable<ProveedorResponseDto>> GetProvidersAsync();
+    Task<ProveedorResponseDto?> GetProviderByIdAsync(int id);
+    Task<IEnumerable<ProveedorResponseDto>> GetProvidersWithFiltersAsync(ProveedorFiltrosDto filtros);
+    Task<ProveedorResponseDto> CreateProviderAsync(ProveedorCreateDto proveedorDto);
+    Task<ProveedorResponseDto> UpdateProviderAsync(int id, ProveedorUpdateDto proveedorDto);
+    Task DesactivateProviderAsync(int id);
+    Task<ProveedorResponseDto> ReactivateProviderAsync(int id);
+    Task<bool> ExistProviderAsync(int id);
 }

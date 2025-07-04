@@ -13,16 +13,12 @@ namespace FashionPay.Api.Controllers;
 [Produces("application/json")]
 public class ProductosController : ControllerBase
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
     private readonly ILogger<ProductosController> _logger;
     private readonly IProductoService _productoService;
 
-    public ProductosController(IUnitOfWork unitOfWork, IMapper mapper, ILogger<ProductosController> logger, IProductoService productoService)
+    public ProductosController(ILogger<ProductosController> logger, IProductoService productoService)
     {
-        _unitOfWork = unitOfWork;
         _productoService = productoService;
-        _mapper = mapper;
         _logger = logger;
     }
 
@@ -32,11 +28,11 @@ public class ProductosController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ProductoResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<ProductoResponseDto>>> GetProductos()
+    public async Task<ActionResult<IEnumerable<ProductoResponseDto>>> GetProducts()
     {
         try
         {
-            var productos = await _productoService.GetProductosActivosAsync();
+            var productos = await _productoService.GetProductsActiveAsync();
             _logger.LogInformation("Se obtuvieron {Count} productos activos", productos.Count());
             return Ok(productos);
         }
@@ -54,11 +50,11 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(typeof(ProductoResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ProductoResponseDto>> GetProducto(int id)
+    public async Task<ActionResult<ProductoResponseDto>> GetProduct(int id)
     {
         try
         {
-            var productoDto = await _productoService.GetProductoByIdAsync(id);
+            var productoDto = await _productoService.GetProductByIdAsync(id);
             if (productoDto == null)
             {
                 return NotFound(new { message = $"Producto con ID {id} no encontrado" });
@@ -79,11 +75,11 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(typeof(ProductoResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ProductoResponseDto>> GetProductoByCodigo(string codigo)
+    public async Task<ActionResult<ProductoResponseDto>> GetProductByCode(string codigo)
     {
         try
         {
-            var productoDto = await _productoService.GetProductoByCodigoAsync(codigo);
+            var productoDto = await _productoService.GetProductByCodeAsync(codigo);
             if (productoDto == null)
                 return NotFound(new { message = $"Producto con CODIGO {codigo} no encontrado" });
 
@@ -108,7 +104,7 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            var productosDto = await _productoService.GetProductosByProveedorAsync(proveedorId);
+            var productosDto = await _productoService.GetProductsByProviderAsync(proveedorId);
             if (productosDto == null)
                 return NotFound(new { message = $"Productos con ID {proveedorId} de proveedor no encontrados" });
 
@@ -138,7 +134,7 @@ public class ProductosController : ControllerBase
             if (string.IsNullOrWhiteSpace(termino) || termino.Length < 2)
                 return NotFound(new { message = "El término de búsqueda debe tener al menos 2 caracteres" });
 
-            var productosDto = await _productoService.BuscarProductosAsync(termino);
+            var productosDto = await _productoService.SearchProductsAsync(termino);
 
             _logger.LogInformation("Búsqueda '{Termino}' devolvió {Count} productos",
                 termino, productosDto.Count());
@@ -163,7 +159,7 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            var producto = await _productoService.CrearProductoAsync(productoDto);
+            var producto = await _productoService.CreateProductAsync(productoDto);
             _logger.LogInformation("Producto creado: {ProductoId} - {Codigo}", producto.IdProducto, producto.Codigo);
 
             return CreatedAtAction("GetProducto", new { id = producto.IdProducto }, producto);
@@ -192,7 +188,7 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            var producto = await _productoService.ActualizarProductoAsync(id, productoDto);
+            var producto = await _productoService.UpdateProductAsync(id, productoDto);
             _logger.LogInformation("Producto atualizado con ID: {ProductoId} correctamente", producto.IdProducto);
 
             return Ok(producto);
@@ -216,7 +212,7 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            await _productoService.EliminarProductoAsync(id);
+            await _productoService.DeleteProductAsync(id);
 
             _logger.LogInformation("Producto desactivado exitosamente: {ProductoId}", id);
 

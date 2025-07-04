@@ -16,16 +16,16 @@ public class CompraService : ICompraService
         _mapper = mapper;
     }
 
-    public async Task<CompraResponseDto> CrearCompraAsync(CompraCreateDto compraDto)
+    public async Task<CompraResponseDto> CreatePurchaseAsync(CompraCreateDto compraDto)
     {
         // 1. Validaciones de negocio exhaustivas
-        await ValidarCompraAsync(compraDto);
+        await ValidatePurchaseAsync(compraDto);
 
         // 2. Convertir DTO a parámetros primitivos para el repositorio
         var detalles = compraDto.Detalles.Select(d =>
             (d.IdProducto, d.Cantidad, d.PrecioUnitario)).ToList();
 
-        var compra = await _unitOfWork.Compras.CrearCompraAsync(
+        var compra = await _unitOfWork.Compras.CreatePurchaseAsync(
             compraDto.IdCliente,
             compraDto.CantidadPagos,
             compraDto.Observaciones,
@@ -33,32 +33,32 @@ public class CompraService : ICompraService
 
         return _mapper.Map<CompraResponseDto>(compra);
     }
-    public async Task<CompraResponseDto?> GetCompraByIdAsync(int id)
+    public async Task<CompraResponseDto?> GetPurchaseByIdAsync(int id)
     {
         var compra = await _unitOfWork.Compras.GetByIdWithRelationsAsync(id);
         return compra != null ? _mapper.Map<CompraResponseDto>(compra) : null;
     }
 
-    public async Task<IEnumerable<CompraResponseDto>> GetComprasAsync()
+    public async Task<IEnumerable<CompraResponseDto>> GetPurchasesAsync()
     {
         var compras = await _unitOfWork.Compras.GetAllWithRelationsAsync();
         return _mapper.Map<IEnumerable<CompraResponseDto>>(compras);
     }
 
-    public async Task<IEnumerable<CompraResponseDto>> GetComprasByClienteAsync(int clienteId)
+    public async Task<IEnumerable<CompraResponseDto>> GetPurchasesByClientAsync(int clienteId)
     {
         // Validar que el cliente existe
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(clienteId);
         if (cliente == null)
             throw new NotFoundException($"Cliente con ID {clienteId} no encontrado");
 
-        var compras = await _unitOfWork.Compras.GetByClienteWithRelationsAsync(clienteId);
+        var compras = await _unitOfWork.Compras.GetByClientWithRelationsAsync(clienteId);
         return _mapper.Map<IEnumerable<CompraResponseDto>>(compras);
     }
 
-    public async Task<IEnumerable<CompraResponseDto>> GetComprasConFiltrosAsync(CompraFiltrosDto filtros)
+    public async Task<IEnumerable<CompraResponseDto>> GetPurchasesWithFiltersAsync(CompraFiltrosDto filtros)
     {
-        var compras = await _unitOfWork.Compras.GetComprasWithFiltrosAsync(
+        var compras = await _unitOfWork.Compras.GetPurchasesWithFiltersAsync(
             filtros.IdCliente,
             filtros.FechaDesde,
             filtros.FechaHasta,
@@ -68,7 +68,7 @@ public class CompraService : ICompraService
 
         return _mapper.Map<IEnumerable<CompraResponseDto>>(compras);
     }
-    private async Task ValidarCompraAsync(CompraCreateDto compraDto)
+    private async Task ValidatePurchaseAsync(CompraCreateDto compraDto)
     {
         // 1. Validar que el cliente existe y está activo
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(compraDto.IdCliente);
@@ -76,7 +76,7 @@ public class CompraService : ICompraService
             throw new BusinessException("El cliente seleccionado no existe o está inactivo");
 
         // 2. Validar que el cliente no esté moroso
-        var estadoCuenta = await _unitOfWork.Clientes.GetEstadoCuentaAsync(compraDto.IdCliente);
+        var estadoCuenta = await _unitOfWork.Clientes.GetAccountStatusAsync(compraDto.IdCliente);
         if (estadoCuenta?.Clasificacion == "MOROSO")
             throw new BusinessException("El cliente está clasificado como moroso y no puede realizar compras");
 
@@ -112,7 +112,7 @@ public class CompraService : ICompraService
         }
 
         // 6. Validar límite de crédito
-        var deudaActual = await _unitOfWork.Clientes.GetDeudaTotalAsync(compraDto.IdCliente);
+        var deudaActual = await _unitOfWork.Clientes.GetTotalDebtAsync(compraDto.IdCliente);
         var creditoDisponible = cliente.LimiteCredito - deudaActual;
 
         if (montoTotal > creditoDisponible)
