@@ -24,7 +24,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             .FirstOrDefaultAsync(a => a.IdAbono == id);
     }
 
-    public async Task<IEnumerable<Abono>> GetAbonosByClienteAsync(int clienteId)
+    public async Task<IEnumerable<Abono>> GetPaymentsByClientAsync(int clienteId)
     {
         return await _dbSet
             .Include(a => a.IdClienteNavigation)
@@ -36,7 +36,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             .OrderByDescending(a => a.FechaAbono)
             .ToListAsync();
     }
-    public async Task<IEnumerable<Abono>> GetAbonosWithFullRelationsAsync(int? clienteId = null)
+    public async Task<IEnumerable<Abono>> GetPaymentsWithFullRelationsAsync(int? clienteId = null)
     {
         var query = _dbSet
             .Include(a => a.IdClienteNavigation)
@@ -55,7 +55,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             .OrderByDescending(a => a.FechaAbono)
             .ToListAsync();
     }
-    public async Task<IEnumerable<Abono>> GetAbonosByFechaAsync(DateTime fecha)
+    public async Task<IEnumerable<Abono>> GetPaymentsByDateAsync(DateTime fecha)
     {
         var fechaInicio = fecha.Date;
         var fechaFin = fechaInicio.AddDays(1);
@@ -67,7 +67,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             .OrderBy(a => a.FechaAbono)
             .ToListAsync();
     }
-    public async Task<Abono> AplicarAbonoCompletoAsync(
+    public async Task<Abono> ApplyFullPaymentAsync(
      int clienteId,
      decimal montoAbono,
      string formaPago,
@@ -99,7 +99,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             // Obtener el ID del abono creado
             var abonoId = (int)abonoIdParameter.Value;
 
-            await VerificarYLiberarCreditoAsync(clienteId);
+            await VerifyAndReleaseCreditAsync(clienteId);
 
             var abono = await _dbSet
                 .Include(a => a.IdClienteNavigation)
@@ -125,7 +125,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             throw new Exception($"Error al registrar abono: {ex.Message}");
         }
     }
-    private async Task VerificarYLiberarCreditoAsync(int clienteId)
+    private async Task VerifyAndReleaseCreditAsync(int clienteId)
     {
         try
         {

@@ -16,7 +16,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
         return await _dbSet
             .FirstOrDefaultAsync(c => c.Email == email);
     }
-    public async Task<decimal> GetDeudaTotalAsync(int clienteId)
+    public async Task<decimal> GetTotalDebtAsync(int clienteId)
     {
         var estadoCuenta = await _context.EstadoCuenta
             .FirstOrDefaultAsync(ec => ec.IdCliente == clienteId);
@@ -31,13 +31,13 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
             .Where(pp => pp.IdCompraNavigation.IdCliente == clienteId && pp.SaldoPendiente > 0)
             .SumAsync(pp => pp.SaldoPendiente);
     }
-    public async Task<EstadoCuenta?> GetEstadoCuentaAsync(int clienteId)
+    public async Task<EstadoCuenta?> GetAccountStatusAsync(int clienteId)
     {
         return await _context.EstadoCuenta
             .FirstOrDefaultAsync(ec => ec.IdCliente == clienteId);
     }
 
-    public async Task<IEnumerable<Cliente>> GetClientesByClasificacionAsync(string clasificacion)
+    public async Task<IEnumerable<Cliente>> GetClientsByClassificationAsync(string clasificacion)
     {
         return await _dbSet
             .Include(c => c.EstadoCuenta)
@@ -45,7 +45,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
             .ToListAsync();
     }
 
-    public async Task ExecuteCalcularSaldoAsync(int clienteId)
+    public async Task ExecuteCalculateBalanceAsync(int clienteId)
     {
         await _context.Database.ExecuteSqlRawAsync(
             "EXEC sp_CalcularSaldoCliente @p0", clienteId);
@@ -66,7 +66,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
             .ToListAsync();
     }
 
-    public async Task<Cliente> CrearClienteConEstadoCuentaAsync(
+    public async Task<Cliente> CreateClientWithAccountStatusAsync(
     string nombre,
     string email,
     string? telefono,
@@ -90,7 +90,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
     };
 
         // Ejecutar procedimiento y obtener resultado
-        var resultados = await _context.Database.SqlQueryRaw<SpAltaClienteResult>(
+        var resultados = await _context.Database.SqlQueryRaw<SpAddClientResult>(
             "EXEC sp_AltaCliente @Nombre, @Email, @Telefono, @Direccion, @DiaPago, @LimiteCredito, @CantidadMaximaPagos, @ToleranciasMorosidad",
             parameters).ToListAsync();
 
@@ -109,7 +109,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
     }
 
     // Clase para el resultado del procedimiento almacenado
-    public class SpAltaClienteResult
+    public class SpAddClientResult
     {
         public int IdCliente { get; set; }
         public string Mensaje { get; set; } = string.Empty;

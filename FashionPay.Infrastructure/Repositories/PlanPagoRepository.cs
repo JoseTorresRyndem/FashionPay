@@ -11,7 +11,7 @@ public class PlanPagoRepository : BaseRepository<PlanPago>, IPlanPagoRepository
     {
     }
 
-    public async Task<IEnumerable<PlanPago>> GetPagosVencidosAsync()
+    public async Task<IEnumerable<PlanPago>> GetOverduePaymentsAsync()
     {
         return await _dbSet
             .Include(pp => pp.IdCompraNavigation)
@@ -21,7 +21,7 @@ public class PlanPagoRepository : BaseRepository<PlanPago>, IPlanPagoRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<PlanPago>> GetPagosByClienteAsync(int clienteId)
+    public async Task<IEnumerable<PlanPago>> GetPaymentsByClientAsync(int clienteId)
     {
         return await _dbSet
             .Include(pp => pp.IdCompraNavigation)
@@ -30,7 +30,7 @@ public class PlanPagoRepository : BaseRepository<PlanPago>, IPlanPagoRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<PlanPago>> GetPagosByCompraAsync(int compraId)
+    public async Task<IEnumerable<PlanPago>> GetPaymentsByPurchaseAsync(int compraId)
     {
         return await _dbSet
             .Where(pp => pp.IdCompra == compraId)
@@ -38,7 +38,7 @@ public class PlanPagoRepository : BaseRepository<PlanPago>, IPlanPagoRepository
             .ToListAsync();
     }
 
-    public async Task<PlanPago?> GetProximoPagoPendienteAsync(int clienteId)
+    public async Task<PlanPago?> GetNextPendingPaymentAsync(int clienteId)
     {
         return await _dbSet
             .Include(pp => pp.IdCompraNavigation)

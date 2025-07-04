@@ -3,9 +3,10 @@
 namespace FashionPay.Application.Services;
 public interface ICompraService
 {
-    Task<CompraResponseDto> CrearCompraAsync(CompraCreateDto compraDto);
-    Task<CompraResponseDto?> GetCompraByIdAsync(int id);
-    Task<IEnumerable<CompraResponseDto>> GetComprasAsync();
-    Task<IEnumerable<CompraResponseDto>> GetComprasByClienteAsync(int clienteId);
-    Task<IEnumerable<CompraResponseDto>> GetComprasConFiltrosAsync(CompraFiltrosDto filtros);
+    Task<CompraResponseDto> CreatePurchaseAsync(CompraCreateDto purchaseDto);
+    Task<CompraResponseDto?> GetPurchaseByIdAsync(int id);
+    Task<IEnumerable<CompraResponseDto>> GetPurchasesAsync();
+    Task<IEnumerable<CompraResponseDto>> GetPurchasesByClientAsync(int clientId);
+    Task<IEnumerable<CompraResponseDto>> GetPurchasesWithFiltersAsync(CompraFiltrosDto filters);
+
 }

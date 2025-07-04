@@ -4,12 +4,12 @@ namespace FashionPay.Application.Services;
 
 public interface IProductoService
 {
-    Task<ProductoResponseDto> CrearProductoAsync(ProductoCreateDto productoDto);
-    Task<ProductoResponseDto?> GetProductoByIdAsync(int id);
-    Task<ProductoResponseDto?> GetProductoByCodigoAsync(string codigo);
-    Task<IEnumerable<ProductoResponseDto>> GetProductosActivosAsync();
-    Task<IEnumerable<ProductoResponseDto>> GetProductosByProveedorAsync(int proveedorId);
-    Task<IEnumerable<ProductoResponseDto>> BuscarProductosAsync(string termino);
-    Task<ProductoResponseDto> ActualizarProductoAsync(int id, ProductoUpdateDto productoDto);
-    Task<bool> EliminarProductoAsync(int id);
+    Task<ProductoResponseDto> CreateProductAsync(ProductoCreateDto productoDto);
+    Task<ProductoResponseDto?> GetProductByIdAsync(int id);
+    Task<ProductoResponseDto?> GetProductByCodeAsync(string codigo);
+    Task<IEnumerable<ProductoResponseDto>> GetProductsActiveAsync();
+    Task<IEnumerable<ProductoResponseDto>> GetProductsByProviderAsync(int proveedorId);
+    Task<IEnumerable<ProductoResponseDto>> SearchProductsAsync(string termino);
+    Task<ProductoResponseDto> UpdateProductAsync(int id, ProductoUpdateDto productoDto);
+    Task<bool> DeleteProductAsync(int id);
 }

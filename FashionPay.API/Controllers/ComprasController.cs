@@ -28,7 +28,7 @@ public class ComprasController : ControllerBase
     {
         try
         {
-            var compras = await _compraService.GetComprasAsync();
+            var compras = await _compraService.GetPurchasesAsync();
             _logger.LogInformation("Se obtuvieron {Count} compras", compras.Count());
             return Ok(compras);
         }
@@ -49,7 +49,7 @@ public class ComprasController : ControllerBase
     {
         try
         {
-            var compra = await _compraService.GetCompraByIdAsync(id);
+            var compra = await _compraService.GetPurchaseByIdAsync(id);
             if (compra == null)
             {
                 _logger.LogWarning("Compra con ID {CompraId} no encontrada", id);
@@ -75,7 +75,7 @@ public class ComprasController : ControllerBase
     {
         try
         {
-            var compras = await _compraService.GetComprasByClienteAsync(clienteId);
+            var compras = await _compraService.GetPurchasesByClientAsync(clienteId);
             _logger.LogInformation("Se obtuvieron {Count} compras para el cliente {ClienteId}",
                 compras.Count(), clienteId);
 
@@ -102,7 +102,7 @@ public class ComprasController : ControllerBase
     {
         try
         {
-            var compras = await _compraService.GetComprasConFiltrosAsync(filtros);
+            var compras = await _compraService.GetPurchasesWithFiltersAsync(filtros);
             _logger.LogInformation("Búsqueda de compras devolvió {Count} resultados", compras.Count());
 
             return Ok(compras);
@@ -124,7 +124,7 @@ public class ComprasController : ControllerBase
     {
         try
         {
-            var compra = await _compraService.CrearCompraAsync(compraDto);
+            var compra = await _compraService.CreatePurchaseAsync(compraDto);
             _logger.LogInformation("Compra creada: {CompraId} - Cliente: {ClienteId} - Monto: ${MontoTotal:F2}",
                 compra.IdCompra, compra.Cliente.IdCliente, compra.MontoTotal);
 

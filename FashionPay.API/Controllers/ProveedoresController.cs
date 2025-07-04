@@ -25,11 +25,11 @@ public class ProveedoresController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ProveedorResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<ProveedorResponseDto>>> GetProveedores()
+    public async Task<ActionResult<IEnumerable<ProveedorResponseDto>>> GetProviders()
     {
         try
         {
-            var proveedores = await _proveedorService.GetProveedoresAsync();
+            var proveedores = await _proveedorService.GetProvidersAsync();
             _logger.LogInformation("Se obtuvieron {Count} proveedores", proveedores.Count());
             return Ok(proveedores);
         }
@@ -47,11 +47,11 @@ public class ProveedoresController : ControllerBase
     [ProducesResponseType(typeof(ProveedorResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ProveedorResponseDto>> GetProveedor(int id)
+    public async Task<ActionResult<ProveedorResponseDto>> GetProviderById(int id)
     {
         try
         {
-            var proveedor = await _proveedorService.GetProveedorByIdAsync(id);
+            var proveedor = await _proveedorService.GetProviderByIdAsync(id);
             if (proveedor == null)
             {
                 _logger.LogWarning("Proveedor con ID {ProveedorId} no encontrado", id);
@@ -73,11 +73,11 @@ public class ProveedoresController : ControllerBase
     [HttpGet("buscar")]
     [ProducesResponseType(typeof(IEnumerable<ProveedorResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<ProveedorResponseDto>>> BuscarProveedores([FromQuery] ProveedorFiltrosDto filtros)
+    public async Task<ActionResult<IEnumerable<ProveedorResponseDto>>> SearchProviders([FromQuery] ProveedorFiltrosDto filtros)
     {
         try
         {
-            var proveedores = await _proveedorService.GetProveedoresConFiltrosAsync(filtros);
+            var proveedores = await _proveedorService.GetProvidersWithFiltersAsync(filtros);
             _logger.LogInformation("Búsqueda de proveedores devolvió {Count} resultados", proveedores.Count());
 
             return Ok(proveedores);
@@ -100,11 +100,11 @@ public class ProveedoresController : ControllerBase
     {
         try
         {
-            var proveedor = await _proveedorService.CrearProveedorAsync(proveedorDto);
+            var proveedor = await _proveedorService.CreateProviderAsync(proveedorDto);
             _logger.LogInformation("Proveedor creado: {ProveedorId} - Nombre: {Nombre}",
                 proveedor.IdProveedor, proveedor.Nombre);
 
-            return CreatedAtAction("GetProveedor", new { id = proveedor.IdProveedor }, proveedor);
+            return CreatedAtAction("GetProviderById", new { id = proveedor.IdProveedor }, proveedor);
         }
         catch (BusinessException ex)
         {
@@ -130,7 +130,7 @@ public class ProveedoresController : ControllerBase
     {
         try
         {
-            var proveedor = await _proveedorService.ActualizarProveedorAsync(id, proveedorDto);
+            var proveedor = await _proveedorService.UpdateProviderAsync(id, proveedorDto);
             _logger.LogInformation("Proveedor actualizado: {ProveedorId} - Nombre: {Nombre}",
                 proveedor.IdProveedor, proveedor.Nombre);
 
@@ -165,7 +165,7 @@ public class ProveedoresController : ControllerBase
     {
         try
         {
-            await _proveedorService.DesactivarProveedorAsync(id);
+            await _proveedorService.DesactivateProviderAsync(id);
             _logger.LogInformation("Proveedor desactivado: {ProveedorId}", id);
 
             return NoContent();
@@ -198,7 +198,7 @@ public class ProveedoresController : ControllerBase
     {
         try
         {
-            var proveedor = await _proveedorService.ReactivarProveedorAsync(id);
+            var proveedor = await _proveedorService.ReactivateProviderAsync(id);
             _logger.LogInformation("Proveedor reactivado: {ProveedorId}", id);
 
             return Ok(proveedor);
