@@ -14,10 +14,4 @@ public interface ICompraRepository : IBaseRepository<Compra>
         decimal? minAmount = null,
         decimal? maxAmount = null
     );
-    Task<Compra> CreatePurchaseAsync(
-        int clienteId,
-        int cantidadPagos,
-        string? observaciones,
-        List<(int ProductoId, int Cantidad, decimal PrecioUnitario)> detalles);
-
 }

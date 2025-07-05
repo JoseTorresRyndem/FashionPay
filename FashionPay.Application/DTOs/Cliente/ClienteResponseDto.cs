@@ -16,8 +16,6 @@ public class ClienteResponseDto
     public int ToleranciasMorosidad { get; set; }
     public DateTime FechaRegistro { get; set; }
     public bool Activo { get; set; }
-
-    // Información del estado de cuenta
     public EstadoCuentaDto? EstadoCuenta { get; set; }
 }
 

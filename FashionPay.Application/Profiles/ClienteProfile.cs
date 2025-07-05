@@ -14,7 +14,7 @@ public class ClienteProfile : Profile
         // Mapeo ClienteCreateDto → Cliente  
         CreateMap<ClienteCreateDto, Cliente>()
             .ForMember(dest => dest.IdCliente, opt => opt.Ignore())
-            .ForMember(dest => dest.PeriodicidadPago, opt => opt.MapFrom(src => 30)) // Mensual por defecto
+            .ForMember(dest => dest.PeriodicidadPago, opt => opt.MapFrom(src => 30))
             .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => DateTime.Now))
             .ForMember(dest => dest.Activo, opt => opt.MapFrom(src => true))
             .ForMember(dest => dest.EstadoCuenta, opt => opt.Ignore())

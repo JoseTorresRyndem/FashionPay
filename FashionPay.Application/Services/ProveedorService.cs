@@ -85,8 +85,6 @@ public class ProveedorService : IProveedorService
         await ValidateProviderAsync(proveedorDto);
 
         var proveedor = _mapper.Map<Proveedor>(proveedorDto);
-        proveedor.FechaRegistro = DateTime.Now;
-        proveedor.Activo = true;
 
         var proveedorCreado = await _unitOfWork.Proveedores.AddAsync(proveedor);
         await _unitOfWork.SaveChangesAsync();

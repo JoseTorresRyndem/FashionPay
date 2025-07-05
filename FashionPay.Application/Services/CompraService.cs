@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
-using FashionPay.Core.Interfaces;
 using FashionPay.Application.DTOs.Compra;
 using FashionPay.Application.Exceptions;
+using FashionPay.Core.Entities;
+using FashionPay.Core.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace FashionPay.Application.Services;
 
@@ -18,20 +20,67 @@ public class CompraService : ICompraService
 
     public async Task<CompraResponseDto> CreatePurchaseAsync(CompraCreateDto compraDto)
     {
-        // 1. Validaciones de negocio exhaustivas
         await ValidatePurchaseAsync(compraDto);
 
-        // 2. Convertir DTO a parámetros primitivos para el repositorio
         var detalles = compraDto.Detalles.Select(d =>
             (d.IdProducto, d.Cantidad, d.PrecioUnitario)).ToList();
 
-        var compra = await _unitOfWork.Compras.CreatePurchaseAsync(
-            compraDto.IdCliente,
-            compraDto.CantidadPagos,
-            compraDto.Observaciones,
-            detalles);
+        var strategy = _unitOfWork.Context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            using var transaction = await _unitOfWork.Context.Database.BeginTransactionAsync();
+            try
+            {
+                var cliente = await _unitOfWork.Clientes.GetByIdWithAccountAsync(compraDto.IdCliente);
+                if (cliente == null || !cliente.Activo)
+                    throw new InvalidOperationException("Cliente no válido para realizar compras");
 
-        return _mapper.Map<CompraResponseDto>(compra);
+                if (cliente.EstadoCuenta?.Clasificacion == "MOROSO")
+                    throw new InvalidOperationException("Cliente moroso no puede realizar compras");
+
+                var (detallesValidados, montoTotal) = await ProcessPurchaseDetailsAsync(detalles);
+
+                ValidateFinancialLimits(cliente, montoTotal, compraDto.CantidadPagos);
+
+                var compra = new Compra
+                {
+                    IdCliente = compraDto.IdCliente,
+                    NumeroCompra = GeneratePurchaseNumber(),
+                    FechaCompra = DateTime.Now,
+                    MontoTotal = montoTotal,
+                    CantidadPagos = compraDto.CantidadPagos,
+                    MontoMensual = Math.Round(montoTotal / compraDto.CantidadPagos, 2),
+                    Observaciones = compraDto.Observaciones,
+                    EstadoCompra = "ACTIVA",
+                    DetalleCompras = detallesValidados
+                };
+                var planPagos = CalculatePaymentPlanWithoutId(montoTotal, compraDto.CantidadPagos, cliente.DiaPago);
+
+                compra.PlanPagos = planPagos;
+
+                await _unitOfWork.Compras.AddAsync(compra);
+
+                cliente.CreditoDisponible -= montoTotal;
+                await _unitOfWork.Clientes.UpdateAsync(cliente);
+
+                await _unitOfWork.SaveChangesAsync();
+
+                await _unitOfWork.Context.Database.ExecuteSqlRawAsync(
+                    "EXEC sp_CalcularSaldoCliente @p0", compraDto.IdCliente);
+
+                await transaction.CommitAsync();
+
+                var compraF = await _unitOfWork.Compras.GetByIdWithRelationsAsync(compra.IdCompra)
+                   ?? throw new InvalidOperationException("Error al recuperar compra creada");
+
+                return _mapper.Map<CompraResponseDto>(compraF);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
     }
     public async Task<CompraResponseDto?> GetPurchaseByIdAsync(int id)
     {
@@ -68,6 +117,53 @@ public class CompraService : ICompraService
 
         return _mapper.Map<IEnumerable<CompraResponseDto>>(compras);
     }
+    //METODO PRIVATE
+    private async Task<(List<DetalleCompra> detalles, decimal montoTotal)> ProcessPurchaseDetailsAsync(
+    List<(int IdProducto, int Cantidad, decimal PrecioUnitario)> detalles)
+    {
+        var detallesValidados = new List<DetalleCompra>();
+        decimal montoTotal = 0;
+
+        foreach (var (idProducto, cantidad, precioUnitario) in detalles)
+        {
+            var producto = await _unitOfWork.Productos.GetByIdAsync(idProducto);
+            if (producto == null || !producto.Activo)
+                throw new InvalidOperationException($"Producto {idProducto} no válido");
+
+            if (producto.Precio != precioUnitario)
+                throw new InvalidOperationException($"Precio del producto {producto.Codigo} ha cambiado");
+
+            var subtotal = cantidad * precioUnitario;
+            montoTotal += subtotal;
+
+            detallesValidados.Add(new DetalleCompra
+            {
+                IdProducto = idProducto,
+                Cantidad = cantidad,
+                PrecioUnitario = precioUnitario,
+                Subtotal = subtotal
+            });
+        }
+
+        return (detallesValidados, montoTotal);
+    }
+    private static void ValidateFinancialLimits(Cliente cliente, decimal montoTotal, int cantidadPagos)
+    {
+        if (cliente.CreditoDisponible < montoTotal)
+        {
+            throw new InvalidOperationException(
+                $"Crédito insuficiente. Disponible: ${cliente.CreditoDisponible:F2}, " +
+                $"Requerido: ${montoTotal:F2}");
+        }
+
+        var deudaActual = cliente.EstadoCuenta?.DeudaTotal ?? 0;
+        if (deudaActual + montoTotal > cliente.LimiteCredito)
+            throw new InvalidOperationException("Monto excede el límite de crédito disponible");
+
+        if (cantidadPagos > cliente.CantidadMaximaPagos)
+            throw new InvalidOperationException($"Máximo {cliente.CantidadMaximaPagos} pagos permitidos");
+    }
+
     private async Task ValidatePurchaseAsync(CompraCreateDto compraDto)
     {
         // 1. Validar que el cliente existe y está activo
@@ -122,6 +218,82 @@ public class CompraService : ICompraService
         if (montoTotal < 100)
             throw new BusinessException("El monto mínimo de compra es $100.00");
 
-        Console.WriteLine($"Compra validada: Cliente {cliente.Nombre}, Productos: {string.Join(", ", productosValidados)}, Monto Total: ${montoTotal:F2}");
     }
+    private List<PlanPago> CalculatePaymentPlanWithoutId(decimal montoTotal, int cantidadPagos, int diaPagoCliente)
+    {
+        var montosPago = CalculateExactAmounts(montoTotal, cantidadPagos);
+        var planPagos = new List<PlanPago>();
+        var fechaBase = DateTime.Today;
+
+        for (int i = 0; i < cantidadPagos; i++)
+        {
+            var fechaVencimiento = CalculateDueDate(fechaBase, i + 1, diaPagoCliente);
+
+            planPagos.Add(new PlanPago
+            {
+
+                NumeroPago = i + 1,
+                FechaVencimiento = fechaVencimiento,
+                MontoProgramado = montosPago[i],
+                MontoPagado = 0,
+                SaldoPendiente = montosPago[i],
+                Estado = "PENDIENTE"
+            });
+        }
+
+        return planPagos;
+    }
+    private List<decimal> CalculateExactAmounts(decimal montoTotal, int cantidadPagos)
+    {
+        // Monto base por pago (redondeado hacia abajo a centavos)
+        var montoBase = Math.Floor(montoTotal / cantidadPagos * 100) / 100;
+
+        // Calcular diferencia total
+        var totalMontoBase = montoBase * cantidadPagos;
+        var diferencia = montoTotal - totalMontoBase;
+
+        // Convertir diferencia a centavos para distribución
+        var centavosDiferencia = (int)Math.Round(diferencia * 100);
+
+        var pagos = new List<decimal>();
+
+        for (int i = 0; i < cantidadPagos; i++)
+        {
+            var montoPago = montoBase;
+
+            // Distribuir centavos extra en los primeros pagos
+            if (i < centavosDiferencia)
+            {
+                montoPago += 0.01m;
+            }
+
+            pagos.Add(montoPago);
+        }
+
+        // Validación: debe sumar exactamente el monto total
+        var sumaTotal = pagos.Sum();
+        if (Math.Abs(sumaTotal - montoTotal) > 0.01m)
+        {
+            throw new InvalidOperationException(
+                $"Error en cálculo de pagos: suma {sumaTotal} != total {montoTotal}");
+        }
+
+        return pagos;
+    }
+    private DateOnly CalculateDueDate(DateTime fechaBase, int numeroPago, int diaPago)
+    {
+        var fechaVencimiento = fechaBase.AddMonths(numeroPago);
+
+        // Ajustar al día de pago del cliente
+        var ultimoDiaDelMes = DateTime.DaysInMonth(fechaVencimiento.Year, fechaVencimiento.Month);
+        var diaEfectivo = Math.Min(diaPago, ultimoDiaDelMes);
+
+        var fechaCalculada = new DateTime(fechaVencimiento.Year, fechaVencimiento.Month, diaEfectivo);
+        return DateOnly.FromDateTime(fechaCalculada);
+    }
+    private string GeneratePurchaseNumber()
+    {
+        return $"CMP-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
+    }
+
 }
