@@ -8,6 +8,7 @@ public interface IClienteRepository : IBaseRepository<Cliente>
     Task<EstadoCuenta?> GetAccountStatusAsync(int clientId);
     Task<IEnumerable<Cliente>> GetClientsByClassificationAsync(string classification);
     Task ExecuteCalculateBalanceAsync(int clientId);
+    Task<Cliente?> GetByIdWithAccountAsync(int id);
     Task<Cliente> CreateClientWithAccountStatusAsync(
             string nombre,
         string email,

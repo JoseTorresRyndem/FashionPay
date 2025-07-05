@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
-using FashionPay.Core.Data;
-using FashionPay.Infrastructure.Repositories;
+﻿using FashionPay.Core.Data;
 using FashionPay.Core.Interfaces;
+using FashionPay.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace FashionPay.Infrastructure.UnitOfWork;
 
@@ -22,8 +23,11 @@ public class UnitOfWork : IUnitOfWork
     {
         _context = context;
     }
+    public DbContext Context => _context;
+
 
     // Propiedades que crean repositorios bajo demanda
+
     public IClienteRepository Clientes
     {
         get { return _clientes ??= new ClienteRepository(_context); }

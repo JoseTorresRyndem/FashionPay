@@ -17,8 +17,8 @@ public class ProveedorProfile : Profile
         // Mapeo CreateDto → Entity
         CreateMap<ProveedorCreateDto, Proveedor>()
             .ForMember(dest => dest.IdProveedor, opt => opt.Ignore()) // Se genera automáticamente
-            .ForMember(dest => dest.FechaRegistro, opt => opt.Ignore()) // Se asigna en el servicio
-            .ForMember(dest => dest.Activo, opt => opt.Ignore()) // Se asigna en el servicio
+            .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => DateTime.Now)) // Fecha actual al crear
+            .ForMember(dest => dest.Activo, opt => opt.MapFrom(src => true)) // Por defecto activo
             .ForMember(dest => dest.Productos, opt => opt.Ignore()); // Relación navegacional
 
         // Mapeo UpdateDto → Entity

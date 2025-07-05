@@ -2,6 +2,7 @@
 using FashionPay.Core.Data;
 using FashionPay.Core.Entities;
 using FashionPay.Core.Interfaces;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace FashionPay.Infrastructure.Repositories;
 
@@ -10,7 +11,6 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
     public CompraRepository(FashionPayContext context) : base(context)
     {
     }
-    // Método para obtener todas las compras con relaciones
     public async Task<IEnumerable<Compra>> GetAllWithRelationsAsync()
     {
         return await _context.Compras
@@ -22,7 +22,6 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             .OrderByDescending(c => c.FechaCompra)
             .ToListAsync();
     }
-    // Método para obtener compra por ID con relaciones
     public async Task<Compra?> GetByIdWithRelationsAsync(int id)
     {
         return await _context.Compras
@@ -33,7 +32,6 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             .Include(c => c.PlanPagos)
             .FirstOrDefaultAsync(c => c.IdCompra == id);
     }
-    // Método para obtener compra por ID cliente con relaciones
     public async Task<IEnumerable<Compra>> GetByClientWithRelationsAsync(int clienteId)
     {
         return await _context.Compras
@@ -82,195 +80,8 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             .OrderByDescending(c => c.FechaCompra)
             .ToListAsync();
     }
-    public async Task<Compra> CreatePurchaseAsync(
-        int clienteId,
-        int cantidadPagos,
-        string? observaciones,
-        List<(int ProductoId, int Cantidad, decimal PrecioUnitario)> detalles)
-    {
-        var strategy = _context.Database.CreateExecutionStrategy();
-        return await strategy.ExecuteAsync(async () =>
-        {
-            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            try
-            {
-                // 1. Validar que el cliente existe y puede comprar
-                var cliente = await _context.Clientes
-                .Include(c => c.EstadoCuenta)
-                .FirstOrDefaultAsync(c => c.IdCliente == clienteId);
-
-                if (cliente == null || !cliente.Activo)
-                    throw new InvalidOperationException("Cliente no válido para realizar compras");
-
-                if (cliente.EstadoCuenta?.Clasificacion == "MOROSO")
-                    throw new InvalidOperationException("Cliente moroso no puede realizar compras");
-
-                // 2. Validar productos y calcular totales
-                var detallesValidados = new List<DetalleCompra>();
-                decimal montoTotal = 0;
-
-                foreach (var detalle in detalles)
-                {
-                    var producto = await _context.Productos.FindAsync(detalle.ProductoId);
-                    if (producto == null || !producto.Activo)
-                        throw new InvalidOperationException($"Producto {detalle.ProductoId} no válido");
-
-                    if (producto.Precio != detalle.PrecioUnitario)
-                        throw new InvalidOperationException($"Precio del producto {producto.Codigo} ha cambiado");
-
-                    var subtotal = detalle.Cantidad * detalle.PrecioUnitario;
-                    montoTotal += subtotal;
-
-                    detallesValidados.Add(new DetalleCompra
-                    {
-                        IdProducto = detalle.ProductoId,
-                        Cantidad = detalle.Cantidad,
-                        PrecioUnitario = detalle.PrecioUnitario,
-                        Subtotal = subtotal
-                    });
-                }
-
-                if (cliente.CreditoDisponible < montoTotal)
-                {
-                    throw new InvalidOperationException(
-                        $"Crédito insuficiente. Disponible: ${cliente.CreditoDisponible:F2}, " +
-                        $"Requerido: ${montoTotal:F2}");
-                }
-
-                var deudaActual = cliente.EstadoCuenta?.DeudaTotal ?? 0;
-                if (deudaActual + montoTotal > cliente.LimiteCredito)
-                    throw new InvalidOperationException("Monto excede el límite de crédito disponible");
-
-                // 4. Validar cantidad de pagos
-                if (cantidadPagos > cliente.CantidadMaximaPagos)
-                    throw new InvalidOperationException($"Máximo {cliente.CantidadMaximaPagos} pagos permitidos");
-
-                var compra = new Compra
-                {
-                    IdCliente = clienteId,
-                    NumeroCompra = GeneratePurchaseNumber(),
-                    FechaCompra = DateTime.Now,
-                    MontoTotal = montoTotal,
-                    CantidadPagos = cantidadPagos,
-                    MontoMensual = Math.Round(montoTotal / cantidadPagos, 2),
-                    Observaciones = observaciones,
-                    EstadoCompra = "ACTIVA",
-                    DetalleCompras = detallesValidados
-                };
-
-                _context.Compras.Add(compra);
-                await _context.SaveChangesAsync();
-
-                cliente.CreditoDisponible -= montoTotal;
-                _context.Clientes.Update(cliente);
-                await _context.SaveChangesAsync();
-
-                var planPagos = CalculatePaymentPlan(
-                    compra.IdCompra,
-                    montoTotal,
-                    cantidadPagos,
-                    cliente.DiaPago);
-
-                _context.PlanPagos.AddRange(planPagos);
-                await _context.SaveChangesAsync();
-
-                await UpdateClientAccountStatusAsync(clienteId);
-
-                await transaction.CommitAsync();
-
-                return await GetByIdWithRelationsAsync(compra.IdCompra)
-                    ?? throw new InvalidOperationException("Error al recuperar compra creada");
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        });
-    }
     //Métodos privados para calcular los planes de pago y montos
-    private List<PlanPago> CalculatePaymentPlan(int compraId, decimal montoTotal, int cantidadPagos, int diaPagoCliente)
-    {
-        // Calcular montos exactos (evitar errores de redondeo)
-        var montosPago = CalculateExactAmounts(montoTotal, cantidadPagos);
-        var planPagos = new List<PlanPago>();
-        var fechaBase = DateTime.Today;
 
-        for (int i = 0; i < cantidadPagos; i++)
-        {
-            var fechaVencimiento = CalculateDueDate(fechaBase, i + 1, diaPagoCliente);
 
-            planPagos.Add(new PlanPago
-            {
-                IdCompra = compraId,
-                NumeroPago = i + 1,
-                FechaVencimiento = fechaVencimiento,
-                MontoProgramado = montosPago[i],
-                MontoPagado = 0,
-                SaldoPendiente = montosPago[i],
-                Estado = "PENDIENTE"
-            });
-        }
-
-        return planPagos;
-    }
-    private List<decimal> CalculateExactAmounts(decimal montoTotal, int cantidadPagos)
-    {
-        // Monto base por pago (redondeado hacia abajo a centavos)
-        var montoBase = Math.Floor(montoTotal / cantidadPagos * 100) / 100;
-
-        // Calcular diferencia total
-        var totalMontoBase = montoBase * cantidadPagos;
-        var diferencia = montoTotal - totalMontoBase;
-
-        // Convertir diferencia a centavos para distribución
-        var centavosDiferencia = (int)Math.Round(diferencia * 100);
-
-        var pagos = new List<decimal>();
-
-        for (int i = 0; i < cantidadPagos; i++)
-        {
-            var montoPago = montoBase;
-
-            // Distribuir centavos extra en los primeros pagos
-            if (i < centavosDiferencia)
-            {
-                montoPago += 0.01m;
-            }
-
-            pagos.Add(montoPago);
-        }
-
-        // Validación: debe sumar exactamente el monto total
-        var sumaTotal = pagos.Sum();
-        if (Math.Abs(sumaTotal - montoTotal) > 0.01m)
-        {
-            throw new InvalidOperationException(
-                $"Error en cálculo de pagos: suma {sumaTotal} != total {montoTotal}");
-        }
-
-        return pagos;
-    }
-    private DateOnly CalculateDueDate(DateTime fechaBase, int numeroPago, int diaPago)
-    {
-        var fechaVencimiento = fechaBase.AddMonths(numeroPago);
-
-        // Ajustar al día de pago del cliente
-        var ultimoDiaDelMes = DateTime.DaysInMonth(fechaVencimiento.Year, fechaVencimiento.Month);
-        var diaEfectivo = Math.Min(diaPago, ultimoDiaDelMes);
-
-        var fechaCalculada = new DateTime(fechaVencimiento.Year, fechaVencimiento.Month, diaEfectivo);
-        return DateOnly.FromDateTime(fechaCalculada);
-    }
-    private string GeneratePurchaseNumber()
-    {
-        return $"CMP-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
-    }
-    private async Task UpdateClientAccountStatusAsync(int clienteId)
-    {
-        // Ejecutar procedimiento almacenado para recalcular estado
-        await _context.Database.ExecuteSqlRawAsync(
-            "EXEC sp_CalcularSaldoCliente @p0", clienteId);
-    }
 }

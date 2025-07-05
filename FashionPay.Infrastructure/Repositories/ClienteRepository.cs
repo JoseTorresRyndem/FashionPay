@@ -13,8 +13,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
     }
     public async Task<Cliente?> GetByEmailAsync(string email)
     {
-        return await _dbSet
-            .FirstOrDefaultAsync(c => c.Email == email);
+        return await _dbSet.FirstOrDefaultAsync(c => c.Email == email);
     }
     public async Task<decimal> GetTotalDebtAsync(int clienteId)
     {
@@ -65,7 +64,12 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
             .Include(c => c.EstadoCuenta)
             .ToListAsync();
     }
-
+    public async Task<Cliente?> GetByIdWithAccountAsync(int id)
+    {
+        return await _context.Clientes
+            .Include(c => c.EstadoCuenta)
+            .FirstOrDefaultAsync(c => c.IdCliente == id);
+    }
     public async Task<Cliente> CreateClientWithAccountStatusAsync(
     string nombre,
     string email,
@@ -108,7 +112,7 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
         return clienteCreado;
     }
 
-    // Clase para el resultado del procedimiento almacenado
+
     public class SpAddClientResult
     {
         public int IdCliente { get; set; }

@@ -1,4 +1,6 @@
-﻿namespace FashionPay.Core.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace FashionPay.Core.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
@@ -13,4 +15,5 @@ public interface IUnitOfWork : IDisposable
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();
     Task RollbackTransactionAsync();
+    DbContext Context { get; }
 }

@@ -20,7 +20,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "FashionPay API",
         Version = "v1",
-        Description = "API para gestión de créditos de moda"
+        Description = "API para gestiï¿½n de crï¿½ditos de moda"
     });
 });
 
@@ -50,7 +50,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Logger.LogInformation(" FashionPay API iniciada correctamente");
-app.Logger.LogInformation(" Documentación disponible en: https://localhost:{Port}",
-app.Environment.IsDevelopment() ? "7000" : "443");
 app.Run();
