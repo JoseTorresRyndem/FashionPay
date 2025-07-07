@@ -16,14 +16,14 @@ public class ClienteProfile : Profile
             .ForMember(dest => dest.IdCliente, opt => opt.Ignore())
             .ForMember(dest => dest.PeriodicidadPago, opt => opt.MapFrom(src => 30))
             .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => DateTime.Now))
-            .ForMember(dest => dest.Activo, opt => opt.MapFrom(src => true))
+            .ForMember(dest => dest.Activo, opt => opt.MapFrom(src => 1))
             .ForMember(dest => dest.EstadoCuenta, opt => opt.Ignore())
             .ForMember(dest => dest.Compras, opt => opt.Ignore());
 
         // Mapeo ClienteUpdateDto → Cliente
         CreateMap<ClienteUpdateDto, Cliente>()
             .ForMember(dest => dest.IdCliente, opt => opt.Ignore())
-            .ForMember(dest => dest.Email, opt => opt.Ignore()) // No permitir cambio de email
+            .ForMember(dest => dest.Email, opt => opt.Ignore())
             .ForMember(dest => dest.PeriodicidadPago, opt => opt.Ignore())
             .ForMember(dest => dest.FechaRegistro, opt => opt.Ignore())
             .ForMember(dest => dest.EstadoCuenta, opt => opt.Ignore())

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace FashionPay.Core.Entities;
+﻿namespace FashionPay.Core.Entities;
 
 public partial class EstadoCuenta
 {

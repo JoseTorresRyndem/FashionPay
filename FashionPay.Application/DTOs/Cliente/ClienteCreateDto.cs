@@ -9,5 +9,5 @@ public class ClienteCreateDto
     public int DiaPago { get; set; }
     public decimal LimiteCredito { get; set; }
     public int CantidadMaximaPagos { get; set; } = 12;
-    public int ToleranciasMorosidad { get; set; } = 5;
+    public int ToleranciasMorosidad { get; set; } = 0;
 }

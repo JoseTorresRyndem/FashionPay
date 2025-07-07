@@ -70,48 +70,6 @@ public class ClienteRepository : BaseRepository<Cliente>, IClienteRepository
             .Include(c => c.EstadoCuenta)
             .FirstOrDefaultAsync(c => c.IdCliente == id);
     }
-    public async Task<Cliente> CreateClientWithAccountStatusAsync(
-    string nombre,
-    string email,
-    string? telefono,
-    string? direccion,
-    int diaPago,
-    decimal limiteCredito,
-    int cantidadMaximaPagos,
-    int toleranciasMorosidad)
-    {
-        // Parámetros para el procedimiento almacenado
-        var parameters = new[]
-        {
-        new SqlParameter("@Nombre", nombre),
-        new SqlParameter("@Email", email),
-        new SqlParameter("@Telefono", telefono ?? (object)DBNull.Value),
-        new SqlParameter("@Direccion", direccion ?? (object)DBNull.Value),
-        new SqlParameter("@DiaPago", diaPago),
-        new SqlParameter("@LimiteCredito", limiteCredito),
-        new SqlParameter("@CantidadMaximaPagos", cantidadMaximaPagos),
-        new SqlParameter("@ToleranciasMorosidad", toleranciasMorosidad)
-    };
-
-        // Ejecutar procedimiento y obtener resultado
-        var resultados = await _context.Database.SqlQueryRaw<SpAddClientResult>(
-            "EXEC sp_AltaCliente @Nombre, @Email, @Telefono, @Direccion, @DiaPago, @LimiteCredito, @CantidadMaximaPagos, @ToleranciasMorosidad",
-            parameters).ToListAsync();
-
-        var resultado = resultados.FirstOrDefault();
-
-        if (resultado == null)
-            throw new InvalidOperationException("Error al crear cliente");
-
-        // Obtener el cliente recién creado con su estado de cuenta
-        var clienteCreado = await GetByIdAsync(resultado.IdCliente);
-
-        if (clienteCreado == null)
-            throw new InvalidOperationException($"Cliente creado pero no encontrado: {resultado.IdCliente}");
-
-        return clienteCreado;
-    }
-
 
     public class SpAddClientResult
     {
