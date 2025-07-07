@@ -34,7 +34,7 @@ public partial class FashionPayContext : DbContext
     public virtual DbSet<Proveedor> Proveedors { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
- => optionsBuilder.UseSqlServer("Server=RYNL044\\JOSETRYNDEMSQL;Database=FashionPayCore;User Id=sa;Password=root;TrustServerCertificate=true;");
+        => optionsBuilder.UseSqlServer("Server=RYNL044\\JOSETRYNDEMSQL;Database=FashionPayCore;User Id=sa;Password=root;TrustServerCertificate=true;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -79,7 +79,7 @@ public partial class FashionPayContext : DbContext
         {
             entity.HasKey(e => e.IdCliente).HasName("PK__Cliente__D5946642746E205C");
 
-            entity.ToTable("Cliente");
+            entity.ToTable("Cliente", tb => tb.HasTrigger("trg_InsertarEstadoCuenta"));
 
             entity.HasIndex(e => e.Email, "IX_Cliente_Email");
 

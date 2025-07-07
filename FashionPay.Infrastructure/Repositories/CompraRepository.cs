@@ -80,8 +80,4 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             .OrderByDescending(c => c.FechaCompra)
             .ToListAsync();
     }
-
-    //Métodos privados para calcular los planes de pago y montos
-
-
 }

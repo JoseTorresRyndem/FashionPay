@@ -2,6 +2,7 @@
 using FashionPay.Core.Interfaces;
 using FashionPay.Application.DTOs.Cliente;
 using FashionPay.Application.Exceptions;
+using FashionPay.Core.Entities;
 
 namespace FashionPay.Application.Services;
 
@@ -43,22 +44,18 @@ public class ClienteService : IClienteService
     }
     public async Task<ClienteResponseDto> CreateClientAsync(ClienteCreateDto clienteDto)
     {
-        // Validación de negocio: Email único
         await ValidateUniqueEmailAsync(clienteDto.Email);
 
-        // Usar procedimiento almacenado sp_AltaCliente
-        var clienteCreado = await _unitOfWork.Clientes.CreateClientWithAccountStatusAsync(
-            clienteDto.Nombre,
-            clienteDto.Email,
-            clienteDto.Telefono,
-            clienteDto.Direccion,
-            clienteDto.DiaPago,
-            clienteDto.LimiteCredito,
-            clienteDto.CantidadMaximaPagos,
-            clienteDto.ToleranciasMorosidad
-        );
+        var cliente = _mapper.Map<Cliente>(clienteDto);
 
-        return _mapper.Map<ClienteResponseDto>(clienteCreado);
+        cliente.CreditoDisponible = clienteDto.LimiteCredito;
+
+        var result = await _unitOfWork.Clientes.AddAsync(cliente);
+        await _unitOfWork.SaveChangesAsync();
+
+        var clienteCreate = await _unitOfWork.Clientes.GetByIdAsync(result.IdCliente);
+
+        return _mapper.Map<ClienteResponseDto>(clienteCreate);
     }
     public async Task<ClienteResponseDto> UpdateClientAsync(int id, ClienteUpdateDto clienteDto)
     {

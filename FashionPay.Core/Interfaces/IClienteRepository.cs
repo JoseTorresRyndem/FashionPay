@@ -9,13 +9,5 @@ public interface IClienteRepository : IBaseRepository<Cliente>
     Task<IEnumerable<Cliente>> GetClientsByClassificationAsync(string classification);
     Task ExecuteCalculateBalanceAsync(int clientId);
     Task<Cliente?> GetByIdWithAccountAsync(int id);
-    Task<Cliente> CreateClientWithAccountStatusAsync(
-            string nombre,
-        string email,
-        string? telefono,
-        string? direccion,
-        int diaPago,
-        decimal limiteCredito,
-        int cantidadMaximaPagos,
-        int toleranciasMorosidad);
+
 }
