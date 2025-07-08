@@ -75,7 +75,7 @@ public class CompraService : ICompraService
 
                 return _mapper.Map<CompraResponseDto>(compraF);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync();
                 throw;

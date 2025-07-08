@@ -19,14 +19,11 @@ public class ProductoService : IProductoService
 
     public async Task<ProductoResponseDto> CreateProductAsync(ProductoCreateDto productoDto)
     {
-        // Validaciones de negocio
         await ValidateCreationProductAsync(productoDto);
 
-        // Mapear y crear
         var producto = _mapper.Map<Producto>(productoDto);
         var productoCreado = await _unitOfWork.Productos.AddAsync(producto);
-
-        // Obtener producto completo con proveedor
+        
         var productoCompleto = await _unitOfWork.Productos.GetByIdAsync(productoCreado.IdProducto);
         return _mapper.Map<ProductoResponseDto>(productoCompleto!);
     }
@@ -49,11 +46,10 @@ public class ProductoService : IProductoService
         return _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
     }
 
-    public async Task<IEnumerable<ProductoResponseDto>?> GetProductsByProviderAsync(int proveedorId)
+    public async Task<IEnumerable<ProductoResponseDto>> GetProductsByProviderAsync(int proveedorId)
     {
-        var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(proveedorId);
         var productos = await _unitOfWork.Productos.GetProductsByProviderAsync(proveedorId);
-        return productos != null ? _mapper.Map<IEnumerable<ProductoResponseDto>>(productos) : null;
+        return _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
     }
 
     public async Task<IEnumerable<ProductoResponseDto>> SearchProductsAsync(string termino)

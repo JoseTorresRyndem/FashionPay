@@ -34,7 +34,13 @@ public partial class FashionPayContext : DbContext
     public virtual DbSet<Proveedor> Proveedors { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Server=RYNL044\\JOSETRYNDEMSQL;Database=FashionPayCore;User Id=sa;Password=root;TrustServerCertificate=true;");
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            // Fallback connection string - should be configured via DI in production
+            optionsBuilder.UseSqlServer("Server=localhost;Database=FashionPayCore;Integrated Security=true;TrustServerCertificate=true;");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

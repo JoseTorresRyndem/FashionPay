@@ -11,12 +11,10 @@ namespace FashionPay.Api.Controllers;
 public class ProveedoresController : ControllerBase
 {
     private readonly IProveedorService _proveedorService;
-    private readonly ILogger<ProveedoresController> _logger;
 
-    public ProveedoresController(IProveedorService proveedorService, ILogger<ProveedoresController> logger)
+    public ProveedoresController(IProveedorService proveedorService)
     {
         _proveedorService = proveedorService;
-        _logger = logger;
     }
 
     /// <summary>
@@ -30,13 +28,11 @@ public class ProveedoresController : ControllerBase
         try
         {
             var proveedores = await _proveedorService.GetProvidersAsync();
-            _logger.LogInformation("Se obtuvieron {Count} proveedores", proveedores.Count());
             return Ok(proveedores);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener proveedores");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -54,7 +50,6 @@ public class ProveedoresController : ControllerBase
             var proveedor = await _proveedorService.GetProviderByIdAsync(id);
             if (proveedor == null)
             {
-                _logger.LogWarning("Proveedor con ID {ProveedorId} no encontrado", id);
                 return NotFound(new { message = $"Proveedor con ID {id} no encontrado" });
             }
 
@@ -62,8 +57,7 @@ public class ProveedoresController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener proveedor {ProveedorId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -78,14 +72,12 @@ public class ProveedoresController : ControllerBase
         try
         {
             var proveedores = await _proveedorService.GetProvidersWithFiltersAsync(filtros);
-            _logger.LogInformation("Búsqueda de proveedores devolvió {Count} resultados", proveedores.Count());
 
             return Ok(proveedores);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al buscar proveedores con filtros");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -101,20 +93,16 @@ public class ProveedoresController : ControllerBase
         try
         {
             var proveedor = await _proveedorService.CreateProviderAsync(proveedorDto);
-            _logger.LogInformation("Proveedor creado: {ProveedorId} - Nombre: {Nombre}",
-                proveedor.IdProveedor, proveedor.Nombre);
 
-            return CreatedAtAction("GetProviderById", new { id = proveedor.IdProveedor }, proveedor);
+            return CreatedAtAction(nameof(GetProviderById), new { id = proveedor.IdProveedor }, proveedor);
         }
         catch (BusinessException ex)
         {
-            _logger.LogWarning("Error de negocio al crear proveedor: {Error}", ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error interno al crear proveedor");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -131,25 +119,20 @@ public class ProveedoresController : ControllerBase
         try
         {
             var proveedor = await _proveedorService.UpdateProviderAsync(id, proveedorDto);
-            _logger.LogInformation("Proveedor actualizado: {ProveedorId} - Nombre: {Nombre}",
-                proveedor.IdProveedor, proveedor.Nombre);
 
             return Ok(proveedor);
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("Proveedor no encontrado: {Error}", ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (BusinessException ex)
         {
-            _logger.LogWarning("Error de negocio al actualizar proveedor: {Error}", ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error interno al actualizar proveedor {ProveedorId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -166,24 +149,20 @@ public class ProveedoresController : ControllerBase
         try
         {
             await _proveedorService.DesactivateProviderAsync(id);
-            _logger.LogInformation("Proveedor desactivado: {ProveedorId}", id);
 
             return NoContent();
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("Proveedor no encontrado: {Error}", ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (BusinessException ex)
         {
-            _logger.LogWarning("Error de negocio al desactivar proveedor: {Error}", ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error interno al desactivar proveedor {ProveedorId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -199,19 +178,16 @@ public class ProveedoresController : ControllerBase
         try
         {
             var proveedor = await _proveedorService.ReactivateProviderAsync(id);
-            _logger.LogInformation("Proveedor reactivado: {ProveedorId}", id);
 
             return Ok(proveedor);
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("Proveedor no encontrado: {Error}", ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error interno al reactivar proveedor {ProveedorId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 }

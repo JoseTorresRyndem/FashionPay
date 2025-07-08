@@ -13,13 +13,11 @@ namespace FashionPay.Api.Controllers;
 [Produces("application/json")]
 public class ProductosController : ControllerBase
 {
-    private readonly ILogger<ProductosController> _logger;
     private readonly IProductoService _productoService;
 
-    public ProductosController(ILogger<ProductosController> logger, IProductoService productoService)
+    public ProductosController(IProductoService productoService)
     {
         _productoService = productoService;
-        _logger = logger;
     }
 
     /// <summary>
@@ -33,13 +31,11 @@ public class ProductosController : ControllerBase
         try
         {
             var productos = await _productoService.GetProductsActiveAsync();
-            _logger.LogInformation("Se obtuvieron {Count} productos activos", productos.Count());
             return Ok(productos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener productos");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -63,8 +59,7 @@ public class ProductosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener producto {ProductoId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -83,13 +78,11 @@ public class ProductosController : ControllerBase
             if (productoDto == null)
                 return NotFound(new { message = $"Producto con CODIGO {codigo} no encontrado" });
 
-            _logger.LogInformation("Se obtuvo el producto con el codigo: {codigo}", productoDto);
             return Ok(productoDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al buscar producto por código {Codigo}", codigo);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -108,15 +101,12 @@ public class ProductosController : ControllerBase
             if (productosDto == null)
                 return NotFound(new { message = $"Productos con ID {proveedorId} de proveedor no encontrados" });
 
-            _logger.LogInformation("Se obtuvieron {Count} productos del proveedor {ProveedorId}",
-                productosDto.Count(), proveedorId);
 
             return Ok(productosDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener productos del proveedor {ProveedorId}", proveedorId);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -136,15 +126,12 @@ public class ProductosController : ControllerBase
 
             var productosDto = await _productoService.SearchProductsAsync(termino);
 
-            _logger.LogInformation("Búsqueda '{Termino}' devolvió {Count} productos",
-                termino, productosDto.Count());
 
             return Ok(productosDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al buscar productos con término '{Termino}'", termino);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -160,19 +147,16 @@ public class ProductosController : ControllerBase
         try
         {
             var producto = await _productoService.CreateProductAsync(productoDto);
-            _logger.LogInformation("Producto creado: {ProductoId} - {Codigo}", producto.IdProducto, producto.Codigo);
 
-            return CreatedAtAction("GetProducto", new { id = producto.IdProducto }, producto);
+            return CreatedAtAction("GetProduct", new { id = producto.IdProducto }, producto);
         }
         catch (BusinessException ex)
         {
-            _logger.LogWarning("Error de negocio al crear producto: {Error}", ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error interno al crear producto");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -189,14 +173,12 @@ public class ProductosController : ControllerBase
         try
         {
             var producto = await _productoService.UpdateProductAsync(id, productoDto);
-            _logger.LogInformation("Producto atualizado con ID: {ProductoId} correctamente", producto.IdProducto);
 
             return Ok(producto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al actualizar producto {ProductoId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 
@@ -214,14 +196,12 @@ public class ProductosController : ControllerBase
         {
             await _productoService.DeleteProductAsync(id);
 
-            _logger.LogInformation("Producto desactivado exitosamente: {ProductoId}", id);
 
             return NoContent();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al eliminar producto {ProductoId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 }

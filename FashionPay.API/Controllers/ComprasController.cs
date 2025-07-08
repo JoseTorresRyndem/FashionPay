@@ -11,12 +11,10 @@ namespace FashionPay.Api.Controllers;
 public class ComprasController : ControllerBase
 {
     private readonly ICompraService _compraService;
-    private readonly ILogger<ComprasController> _logger;
 
-    public ComprasController(ICompraService compraService, ILogger<ComprasController> logger)
+    public ComprasController(ICompraService compraService)
     {
         _compraService = compraService;
-        _logger = logger;
     }
     /// <summary>
     /// Obtiene todas las compras
@@ -29,13 +27,11 @@ public class ComprasController : ControllerBase
         try
         {
             var compras = await _compraService.GetPurchasesAsync();
-            _logger.LogInformation("Se obtuvieron {Count} compras", compras.Count());
             return Ok(compras);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener compras");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
     /// <summary>
@@ -52,7 +48,6 @@ public class ComprasController : ControllerBase
             var compra = await _compraService.GetPurchaseByIdAsync(id);
             if (compra == null)
             {
-                _logger.LogWarning("Compra con ID {CompraId} no encontrada", id);
                 return NotFound(new { message = $"Compra con ID {id} no encontrada" });
             }
 
@@ -60,8 +55,7 @@ public class ComprasController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener compra {CompraId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
     /// <summary>
@@ -76,20 +70,16 @@ public class ComprasController : ControllerBase
         try
         {
             var compras = await _compraService.GetPurchasesByClientAsync(clienteId);
-            _logger.LogInformation("Se obtuvieron {Count} compras para el cliente {ClienteId}",
-                compras.Count(), clienteId);
 
             return Ok(compras);
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("Cliente no encontrado: {Error}", ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener compras del cliente {ClienteId}", clienteId);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
     /// <summary>
@@ -103,14 +93,12 @@ public class ComprasController : ControllerBase
         try
         {
             var compras = await _compraService.GetPurchasesWithFiltersAsync(filtros);
-            _logger.LogInformation("Búsqueda de compras devolvió {Count} resultados", compras.Count());
 
             return Ok(compras);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al buscar compras con filtros");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
     /// <summary>
@@ -125,25 +113,20 @@ public class ComprasController : ControllerBase
         try
         {
             var compra = await _compraService.CreatePurchaseAsync(compraDto);
-            _logger.LogInformation("Compra creada: {CompraId} - Cliente: {ClienteId} - Monto: ${MontoTotal:F2}",
-                compra.IdCompra, compra.Cliente.IdCliente, compra.MontoTotal);
 
             return CreatedAtAction("GetCompra", new { id = compra.IdCompra }, compra);
         }
         catch (BusinessException ex)
         {
-            _logger.LogWarning("Error de negocio al crear compra: {Error}", ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("Entidad no encontrada: {Error}", ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error interno al crear compra");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
         }
     }
 }
