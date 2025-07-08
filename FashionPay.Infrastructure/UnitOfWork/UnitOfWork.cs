@@ -18,6 +18,7 @@ public class UnitOfWork : IUnitOfWork
     private IAbonoRepository? _abonos;
     private IProductoRepository? _productos;
     private IProveedorRepository? _proveedores;
+    private IEstadoCuentaRepository? _estadoCuentas;
 
     public UnitOfWork(FashionPayContext context)
     {
@@ -56,6 +57,10 @@ public class UnitOfWork : IUnitOfWork
     public IProveedorRepository Proveedores
     {
         get { return _proveedores ??= new ProveedorRepository(_context); }
+    }
+    public IEstadoCuentaRepository EstadoCuentas
+    {
+        get { return _estadoCuentas ??= new EstadoCuentaRepository(_context); }
     }
 
     // Métodos de transacción

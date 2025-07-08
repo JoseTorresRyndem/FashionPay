@@ -11,12 +11,10 @@ namespace FashionPay.Api.Controllers;
 public class AbonosController : ControllerBase
 {
     private readonly IAbonoService _abonoService;
-    private readonly ILogger<AbonosController> _logger;
-
-    public AbonosController(IAbonoService abonoService, ILogger<AbonosController> logger)
+    public AbonosController(IAbonoService abonoService )
     {
         _abonoService = abonoService;
-        _logger = logger;
+
     }
 
     /// <summary>
@@ -30,13 +28,11 @@ public class AbonosController : ControllerBase
         try
         {
             var abonos = await _abonoService.GetPaymentsWithFiltersAsync(filtros);
-            _logger.LogInformation("Se obtuvieron {Count} abonos", abonos.Count());
             return Ok(abonos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener abonos");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
         }
     }
 
@@ -54,7 +50,6 @@ public class AbonosController : ControllerBase
             var abono = await _abonoService.GetPaymentByIdAsync(id);
             if (abono == null)
             {
-                _logger.LogWarning("Abono con ID {AbonoId} no encontrado", id);
                 return NotFound(new { message = $"Abono con ID {id} no encontrado" });
             }
 
@@ -62,8 +57,7 @@ public class AbonosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener abono {AbonoId}", id);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
         }
     }
 
@@ -79,20 +73,15 @@ public class AbonosController : ControllerBase
         try
         {
             var abonos = await _abonoService.GetPaymentsByClientAsync(clienteId);
-            _logger.LogInformation("Se obtuvieron {Count} abonos para el cliente {ClienteId}",
-                abonos.Count(), clienteId);
-
             return Ok(abonos);
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("Cliente no encontrado: {Error}", ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener abonos del cliente {ClienteId}", clienteId);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
         }
     }
 
@@ -108,19 +97,15 @@ public class AbonosController : ControllerBase
         try
         {
             var resumen = await _abonoService.GetClientPaymentSummaryAsync(clienteId);
-            _logger.LogInformation("Resumen generado para cliente {ClienteId}", clienteId);
-
-            return Ok(resumen);
+                  return Ok(resumen);
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("Cliente no encontrado: {Error}", ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener resumen del cliente {ClienteId}", clienteId);
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
         }
     }
 
@@ -136,25 +121,20 @@ public class AbonosController : ControllerBase
         try
         {
             var abono = await _abonoService.RegisterPaymentAsync(abonoDto);
-            _logger.LogInformation("Abono registrado: {AbonoId} - Cliente: {ClienteId} - Monto: ${MontoAbono:F2}",
-                abono.IdAbono, abono.Cliente.IdCliente, abono.MontoAbono);
 
             return CreatedAtAction("GetAbono", new { id = abono.IdAbono }, abono);
         }
         catch (BusinessException ex)
         {
-            _logger.LogWarning("Error de negocio al registrar abono: {Error}", ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("Entidad no encontrada: {Error}", ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error interno al registrar abono");
-            return StatusCode(500, new { message = "Error interno del servidor" });
+            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
         }
     }
 }

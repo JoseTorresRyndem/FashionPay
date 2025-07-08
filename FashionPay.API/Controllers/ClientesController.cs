@@ -12,12 +12,10 @@ namespace FashionPay.API.Controllers
     public class ClientesController : ControllerBase
     {
         private readonly IClienteService _clienteService;
-        private readonly ILogger<ClientesController> _logger;
-
-        public ClientesController(IClienteService clienteService, ILogger<ClientesController> logger)
+        public ClientesController(IClienteService clienteService)
         {
             _clienteService = clienteService;
-            _logger = logger;
+
         }
 
         /// <summary>
@@ -31,13 +29,11 @@ namespace FashionPay.API.Controllers
             try
             {
                 var clientes = await _clienteService.GetClientsAsync();
-                _logger.LogInformation("Se obtuvieron {Count} clientes", clientes.Count());
                 return Ok(clientes);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener clientes");
-                return StatusCode(500, new { message = "Error interno del servidor" });
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
             }
         }
         /// <summary>
@@ -54,7 +50,6 @@ namespace FashionPay.API.Controllers
                 var cliente = await _clienteService.GetClientByIdAsync(id);
                 if (cliente == null)
                 {
-                    _logger.LogWarning("Cliente con ID {ClienteId} no encontrado", id);
                     return NotFound(new { message = $"Cliente con ID {id} no encontrado" });
                 }
 
@@ -62,8 +57,7 @@ namespace FashionPay.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener cliente {ClienteId}", id);
-                return StatusCode(500, new { message = "Error interno del servidor" });
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
             }
         }
 
@@ -81,7 +75,6 @@ namespace FashionPay.API.Controllers
                 var cliente = await _clienteService.GetClientByEmailAsync(email);
                 if (cliente == null)
                 {
-                    _logger.LogWarning("Cliente con email {Email} no encontrado", email);
                     return NotFound(new { message = $"Cliente con email {email} no encontrado" });
                 }
 
@@ -89,8 +82,7 @@ namespace FashionPay.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al buscar cliente por email {Email}", email);
-                return StatusCode(500, new { message = "Error interno del servidor" });
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
             }
         }
         /// <summary>
@@ -105,20 +97,16 @@ namespace FashionPay.API.Controllers
             try
             {
                 var clientes = await _clienteService.GetClientsByClassificationAsync(clasificacion);
-                _logger.LogInformation("Se obtuvieron {Count} clientes con clasificación {Clasificacion}",
-                    clientes.Count(), clasificacion.ToUpper());
 
                 return Ok(clientes);
             }
             catch (BusinessException ex)
             {
-                _logger.LogWarning("Error de validación: {Error}", ex.Message);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener clientes por clasificación {Clasificacion}", clasificacion);
-                return StatusCode(500, new { message = "Error interno del servidor" });
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
             }
         }
         /// <summary>
@@ -133,19 +121,16 @@ namespace FashionPay.API.Controllers
             try
             {
                 var cliente = await _clienteService.CreateClientAsync(clienteDto);
-                _logger.LogInformation("Cliente creado: {ClienteId} - {Email}", cliente.IdCliente, cliente.Email);
 
                 return CreatedAtAction("GetCliente", new { id = cliente.IdCliente }, cliente);
             }
             catch (BusinessException ex)
             {
-                _logger.LogWarning("Error de negocio al crear cliente: {Error}", ex.Message);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error interno al crear cliente");
-                return StatusCode(500, new { message = "Error interno del servidor" });
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
             }
 
         }
@@ -163,24 +148,20 @@ namespace FashionPay.API.Controllers
             try
             {
                 var cliente = await _clienteService.UpdateClientAsync(id, clienteDto);
-                _logger.LogInformation("Cliente actualizado: {ClienteId}", id);
 
                 return Ok(cliente);
             }
             catch (NotFoundException ex)
             {
-                _logger.LogWarning("Cliente no encontrado: {Error}", ex.Message);
                 return NotFound(new { message = ex.Message });
             }
             catch (BusinessException ex)
             {
-                _logger.LogWarning("Error de negocio: {Error}", ex.Message);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error interno al actualizar cliente {ClienteId}", id);
-                return StatusCode(500, new { message = "Error interno del servidor" });
+                return StatusCode(500, new { message = "Error interno del servidor" , error = ex.Message });
             }
         }
 
@@ -198,24 +179,20 @@ namespace FashionPay.API.Controllers
             try
             {
                 await _clienteService.DeleteClientAsync(id);
-                _logger.LogInformation("Cliente eliminado: {ClienteId}", id);
 
                 return NoContent();
             }
             catch (NotFoundException ex)
             {
-                _logger.LogWarning("Cliente no encontrado: {Error}", ex.Message);
                 return NotFound(new { message = ex.Message });
             }
             catch (BusinessException ex)
             {
-                _logger.LogWarning("Error de negocio: {Error}", ex.Message);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error interno al eliminar cliente {ClienteId}", id);
-                return StatusCode(500, new { message = "Error interno del servidor" });
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
             }
         }
 
@@ -232,7 +209,6 @@ namespace FashionPay.API.Controllers
             try
             {
                 await _clienteService.RecalculateBalanceAsync(id);
-                _logger.LogInformation("Saldo recalculado para cliente: {ClienteId}", id);
 
                 return Ok(new
                 {
@@ -243,13 +219,11 @@ namespace FashionPay.API.Controllers
             }
             catch (NotFoundException ex)
             {
-                _logger.LogWarning("Cliente no encontrado: {Error}", ex.Message);
                 return NotFound(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error interno al recalcular saldo {ClienteId}", id);
-                return StatusCode(500, new { message = "Error interno del servidor" });
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
             }
         }
     }

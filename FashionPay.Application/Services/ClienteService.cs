@@ -49,8 +49,15 @@ public class ClienteService : IClienteService
         var cliente = _mapper.Map<Cliente>(clienteDto);
 
         cliente.CreditoDisponible = clienteDto.LimiteCredito;
-
         var result = await _unitOfWork.Clientes.AddAsync(cliente);
+        var estadoCuenta = new EstadoCuenta
+        {
+            IdCliente = result.IdCliente,
+            Clasificacion = "CUMPLIDO",
+            DeudaTotal = 0
+        }; 
+        await _unitOfWork.EstadoCuentas.AddAsync(estadoCuenta);
+
         await _unitOfWork.SaveChangesAsync();
 
         var clienteCreate = await _unitOfWork.Clientes.GetByIdAsync(result.IdCliente);
