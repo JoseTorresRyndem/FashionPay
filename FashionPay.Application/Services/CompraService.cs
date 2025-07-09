@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using FashionPay.Application.DTOs.Compra;
-using FashionPay.Application.Exceptions;
+using FashionPay.Application.Common;
 using FashionPay.Core.Entities;
 using FashionPay.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -99,7 +99,7 @@ public class CompraService : ICompraService
         // Validar que el cliente existe
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(clienteId);
         if (cliente == null)
-            throw new NotFoundException($"Cliente con ID {clienteId} no encontrado");
+            throw new KeyNotFoundException($"Cliente con ID {clienteId} no encontrado");
 
         var compras = await _unitOfWork.Compras.GetByClientWithRelationsAsync(clienteId);
         return _mapper.Map<IEnumerable<CompraResponseDto>>(compras);
@@ -169,20 +169,20 @@ public class CompraService : ICompraService
         // 1. Validar que el cliente existe y está activo
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(compraDto.IdCliente);
         if (cliente == null || !cliente.Activo)
-            throw new BusinessException("El cliente seleccionado no existe o está inactivo");
+            throw new ArgumentException("El cliente seleccionado no existe o está inactivo");
 
         // 2. Validar que el cliente no esté moroso
         var estadoCuenta = await _unitOfWork.Clientes.GetAccountStatusAsync(compraDto.IdCliente);
         if (estadoCuenta?.Clasificacion == "MOROSO")
-            throw new BusinessException("El cliente está clasificado como moroso y no puede realizar compras");
+            throw new InvalidOperationException("El cliente está clasificado como moroso y no puede realizar compras");
 
         // 3. Validar que el cliente no tenga pagos vencidos
         if (estadoCuenta?.CantidadPagosVencidos > 0)
-            throw new BusinessException("El cliente tiene pagos vencidos pendientes y no puede realizar nuevas compras");
+            throw new InvalidOperationException("El cliente tiene pagos vencidos pendientes y no puede realizar nuevas compras");
 
         // 4. Validar cantidad de pagos para este cliente
         if (compraDto.CantidadPagos > cliente.CantidadMaximaPagos)
-            throw new BusinessException($"La cantidad de pagos ({compraDto.CantidadPagos}) excede el máximo permitido para este cliente ({cliente.CantidadMaximaPagos})");
+            throw new ArgumentException($"La cantidad de pagos ({compraDto.CantidadPagos}) excede el máximo permitido para este cliente ({cliente.CantidadMaximaPagos})");
 
         // 5. Validar productos y calcular monto total
         decimal montoTotal = 0;
@@ -193,15 +193,15 @@ public class CompraService : ICompraService
             // Validar que el producto existe y está activo
             var producto = await _unitOfWork.Productos.GetByIdAsync(detalle.IdProducto);
             if (producto == null || !producto.Activo)
-                throw new BusinessException($"El producto con ID {detalle.IdProducto} no existe o está inactivo");
+                throw new ArgumentException($"El producto con ID {detalle.IdProducto} no existe o está inactivo");
 
             // Validar que el precio coincide con el precio actual
             if (producto.Precio != detalle.PrecioUnitario)
-                throw new BusinessException($"El precio del producto '{producto.Nombre}' ha cambiado. Precio actual: ${producto.Precio:F2}");
+                throw new ArgumentException($"El precio del producto '{producto.Nombre}' ha cambiado. Precio actual: ${producto.Precio:F2}");
 
             // Validar stock suficiente (opcional)
             if (producto.Stock < detalle.Cantidad)
-                throw new BusinessException($"Stock insuficiente para el producto '{producto.Nombre}'. Stock disponible: {producto.Stock}");
+                throw new InvalidOperationException($"Stock insuficiente para el producto '{producto.Nombre}'. Stock disponible: {producto.Stock}");
 
             productosValidados.Add(producto.Nombre);
             montoTotal += detalle.Cantidad * detalle.PrecioUnitario;
@@ -212,11 +212,11 @@ public class CompraService : ICompraService
         var creditoDisponible = cliente.LimiteCredito - deudaActual;
 
         if (montoTotal > creditoDisponible)
-            throw new BusinessException($"El monto de la compra (${montoTotal:F2}) excede el límite de crédito disponible (${creditoDisponible:F2})");
+            throw new ArgumentException($"El monto de la compra (${montoTotal:F2}) excede el límite de crédito disponible (${creditoDisponible:F2})");
 
-        // 7. Validar monto mínimo de compra (opcional)
-        if (montoTotal < 100)
-            throw new BusinessException("El monto mínimo de compra es $100.00");
+        // 7. Validar monto mínimo de compra
+        if (montoTotal < BusinessConstants.Purchase.MIN_PURCHASE_AMOUNT)
+            throw new ArgumentException($"El monto mínimo de compra es ${BusinessConstants.Purchase.MIN_PURCHASE_AMOUNT:F2}");
 
     }
     private List<PlanPago> CalculatePaymentPlanWithoutId(decimal montoTotal, int cantidadPagos, int diaPagoCliente)

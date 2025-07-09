@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using FashionPay.Application.Services;
 using FashionPay.Application.DTOs.Abono;
-using FashionPay.Application.Exceptions;
 
 namespace FashionPay.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class AbonosController : ControllerBase
 {
     private readonly IAbonoService _abonoService;
@@ -25,15 +26,8 @@ public class AbonosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<AbonoResponseDto>>> GetAbonos([FromQuery] AbonoFiltrosDto filtros)
     {
-        try
-        {
-            var abonos = await _abonoService.GetPaymentsWithFiltersAsync(filtros);
-            return Ok(abonos);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
-        }
+        var abonos = await _abonoService.GetPaymentsWithFiltersAsync(filtros);
+        return Ok(abonos);
     }
 
     /// <summary>
@@ -45,20 +39,13 @@ public class AbonosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<AbonoResponseDto>> GetAbono(int id)
     {
-        try
+        var abono = await _abonoService.GetPaymentByIdAsync(id);
+        if (abono == null)
         {
-            var abono = await _abonoService.GetPaymentByIdAsync(id);
-            if (abono == null)
-            {
-                return NotFound(new { message = $"Abono con ID {id} no encontrado" });
-            }
+            return NotFound(new { message = $"Abono con ID {id} no encontrado" });
+        }
 
-            return Ok(abono);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
-        }
+        return Ok(abono);
     }
 
     /// <summary>
@@ -70,19 +57,8 @@ public class AbonosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<AbonoResponseDto>>> GetAbonosByCliente(int clienteId)
     {
-        try
-        {
-            var abonos = await _abonoService.GetPaymentsByClientAsync(clienteId);
-            return Ok(abonos);
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
-        }
+        var abonos = await _abonoService.GetPaymentsByClientAsync(clienteId);
+        return Ok(abonos);
     }
 
     /// <summary>
@@ -94,19 +70,8 @@ public class AbonosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ResumenPagosClienteDto>> GetResumenPagosCliente(int clienteId)
     {
-        try
-        {
-            var resumen = await _abonoService.GetClientPaymentSummaryAsync(clienteId);
-                  return Ok(resumen);
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
-        }
+        var resumen = await _abonoService.GetClientPaymentSummaryAsync(clienteId);
+        return Ok(resumen);
     }
 
     /// <summary>
@@ -118,23 +83,7 @@ public class AbonosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<AbonoResponseDto>> CreateAbono(AbonoCreateDto abonoDto)
     {
-        try
-        {
-            var abono = await _abonoService.RegisterPaymentAsync(abonoDto);
-
-            return CreatedAtAction("GetAbono", new { id = abono.IdAbono }, abono);
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
-        }
+        var abono = await _abonoService.RegisterPaymentAsync(abonoDto);
+        return CreatedAtAction("GetAbono", new { id = abono.IdAbono }, abono);
     }
 }

@@ -80,4 +80,12 @@ public class CompraRepository : BaseRepository<Compra>, ICompraRepository
             .OrderByDescending(c => c.FechaCompra)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<Compra>> GetComprasWithProductAsync(int productId)
+    {
+        return await _context.Compras
+            .Include(c => c.DetalleCompras)
+            .Where(c => c.DetalleCompras.Any(dc => dc.IdProducto == productId))
+            .ToListAsync();
+    }
 }

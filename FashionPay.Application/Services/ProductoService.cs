@@ -2,7 +2,6 @@
 using FashionPay.Core.Interfaces;
 using FashionPay.Core.Entities;
 using FashionPay.Application.DTOs.Producto;
-using FashionPay.Application.Exceptions;
 
 namespace FashionPay.Application.Services;
 
@@ -23,6 +22,7 @@ public class ProductoService : IProductoService
 
         var producto = _mapper.Map<Producto>(productoDto);
         var productoCreado = await _unitOfWork.Productos.AddAsync(producto);
+        await _unitOfWork.SaveChangesAsync();
         
         var productoCompleto = await _unitOfWork.Productos.GetByIdAsync(productoCreado.IdProducto);
         return _mapper.Map<ProductoResponseDto>(productoCompleto!);
@@ -62,12 +62,13 @@ public class ProductoService : IProductoService
     {
         var producto = await _unitOfWork.Productos.GetByIdAsync(id);
         if (producto == null)
-            throw new NotFoundException($"Producto con ID {id} no encontrado");
+            throw new KeyNotFoundException($"Producto con ID {id} no encontrado");
 
         await ValidateUpdatingProductAsync(id, productoDto);
 
         _mapper.Map(productoDto, producto);
         await _unitOfWork.Productos.UpdateAsync(producto);
+        await _unitOfWork.SaveChangesAsync();
 
         // Retornar producto actualizado
         var productoActualizado = await _unitOfWork.Productos.GetByIdAsync(id);
@@ -78,31 +79,50 @@ public class ProductoService : IProductoService
     {
         var producto = await _unitOfWork.Productos.GetByIdAsync(id);
         if (producto == null)
-            throw new NotFoundException($"Producto con ID {id} no encontrado");
+            throw new KeyNotFoundException($"Producto con ID {id} no encontrado");
 
-        // TODO: Verificar que no esté en compras pendientes cuando implementemos CompraRepository
-
+        // Verificar que no esté en compras activas
+        var comprasActivas = await _unitOfWork.Compras.GetComprasWithProductAsync(id);
+        if (comprasActivas.Any(c => c.EstadoCompra == "ACTIVA"))
+            throw new InvalidOperationException($"No se puede eliminar el producto porque está asociado a {comprasActivas.Count(c => c.EstadoCompra == "ACTIVA")} compras activas");
+        
         // Soft delete
         producto.Activo = false;
         await _unitOfWork.Productos.UpdateAsync(producto);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
+    }
+    public async Task<ProductoResponseDto> ReactivateProductAsync(int id)
+    {
+        var producto = await _unitOfWork.Productos.GetByIdAsync(id);
+        if (producto == null)
+            throw new KeyNotFoundException($"Producto con ID {id} no encontrado");
+            
+        if (producto.Activo == true)
+            throw new InvalidOperationException($"El producto con ID {id} ya está activo");
+
+        producto.Activo = true;
+        await _unitOfWork.Productos.UpdateAsync(producto);
+        await _unitOfWork.SaveChangesAsync();
+
+        return _mapper.Map<ProductoResponseDto>(producto);
     }
     private async Task ValidateCreationProductAsync(ProductoCreateDto productoDto)
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(productoDto.IdProveedor);
         if (proveedor == null || !proveedor.Activo)
-            throw new BusinessException("El proveedor seleccionado no existe o está inactivo");
+            throw new ArgumentException("El proveedor seleccionado no existe o está inactivo");
 
         var productoExistente = await _unitOfWork.Productos.GetByCodeAsync(productoDto.Codigo);
         if (productoExistente != null)
-            throw new BusinessException($"Ya existe un producto con el código '{productoDto.Codigo}'");
+            throw new ArgumentException($"Ya existe un producto con el código '{productoDto.Codigo}'");
     }
 
     private async Task ValidateUpdatingProductAsync(int id, ProductoUpdateDto productoDto)
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(productoDto.IdProveedor);
         if (proveedor == null || !proveedor.Activo)
-            throw new BusinessException("El proveedor seleccionado no existe o está inactivo");
+            throw new ArgumentException("El proveedor seleccionado no existe o está inactivo");
     }
 }

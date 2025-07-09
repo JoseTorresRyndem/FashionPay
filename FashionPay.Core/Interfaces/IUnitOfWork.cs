@@ -11,6 +11,9 @@ public interface IUnitOfWork : IDisposable
     IProductoRepository Productos { get; }
     IProveedorRepository Proveedores { get; }
     IEstadoCuentaRepository EstadoCuentas { get; }
+    IUserRepository Users { get; }
+    IRoleRepository Roles { get; }
+    IUserRoleRepository UserRoles { get; }
 
     Task<int> SaveChangesAsync();
     Task BeginTransactionAsync();

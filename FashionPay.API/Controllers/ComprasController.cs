@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using FashionPay.Application.Services;
 using FashionPay.Application.DTOs.Compra;
-using FashionPay.Application.Exceptions;
 
 namespace FashionPay.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class ComprasController : ControllerBase
 {
     private readonly ICompraService _compraService;
@@ -24,15 +25,8 @@ public class ComprasController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<CompraResponseDto>>> GetCompras()
     {
-        try
-        {
-            var compras = await _compraService.GetPurchasesAsync();
-            return Ok(compras);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var compras = await _compraService.GetPurchasesAsync();
+        return Ok(compras);
     }
     /// <summary>
     /// Obtiene una compra por ID
@@ -43,20 +37,13 @@ public class ComprasController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CompraResponseDto>> GetCompra(int id)
     {
-        try
+        var compra = await _compraService.GetPurchaseByIdAsync(id);
+        if (compra == null)
         {
-            var compra = await _compraService.GetPurchaseByIdAsync(id);
-            if (compra == null)
-            {
-                return NotFound(new { message = $"Compra con ID {id} no encontrada" });
-            }
+            return NotFound(new { message = $"Compra con ID {id} no encontrada" });
+        }
 
-            return Ok(compra);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        return Ok(compra);
     }
     /// <summary>
     /// Obtiene compras por cliente
@@ -67,20 +54,8 @@ public class ComprasController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<CompraResponseDto>>> GetComprasByCliente(int clienteId)
     {
-        try
-        {
-            var compras = await _compraService.GetPurchasesByClientAsync(clienteId);
-
-            return Ok(compras);
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var compras = await _compraService.GetPurchasesByClientAsync(clienteId);
+        return Ok(compras);
     }
     /// <summary>
     /// Busca compras con filtros
@@ -90,16 +65,8 @@ public class ComprasController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<CompraResponseDto>>> BuscarCompras([FromQuery] CompraFiltrosDto filtros)
     {
-        try
-        {
-            var compras = await _compraService.GetPurchasesWithFiltersAsync(filtros);
-
-            return Ok(compras);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var compras = await _compraService.GetPurchasesWithFiltersAsync(filtros);
+        return Ok(compras);
     }
     /// <summary>
     /// Crea una nueva compra a crédito
@@ -110,23 +77,7 @@ public class ComprasController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CompraResponseDto>> CreateCompra(CompraCreateDto compraDto)
     {
-        try
-        {
-            var compra = await _compraService.CreatePurchaseAsync(compraDto);
-
-            return CreatedAtAction("GetCompra", new { id = compra.IdCompra }, compra);
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var compra = await _compraService.CreatePurchaseAsync(compraDto);
+        return CreatedAtAction("GetCompra", new { id = compra.IdCompra }, compra);
     }
 }

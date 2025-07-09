@@ -31,14 +31,20 @@ public partial class FashionPayContext : DbContext
 
     public virtual DbSet<Producto> Productos { get; set; }
 
-    public virtual DbSet<Proveedor> Proveedors { get; set; }
+    public virtual DbSet<Proveedor> Proveedores { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<UserRole> UserRoles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
         {
-            // Fallback connection string - should be configured via DI in production
-            optionsBuilder.UseSqlServer("Server=localhost;Database=FashionPayCore;Integrated Security=true;TrustServerCertificate=true;");
+            // No fallback connection string for security - must be configured via DI
+            throw new InvalidOperationException("Database connection string must be configured via dependency injection. Check your appsettings.json and Program.cs configuration.");
         }
     }
 
@@ -247,6 +253,54 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.FechaRegistro).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Nombre).HasMaxLength(100);
             entity.Property(e => e.Telefono).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.IdUser).HasName("PK__User__B7C92638");
+
+            entity.ToTable("User");
+
+            entity.HasIndex(e => e.Username, "IX_User_Username");
+            entity.HasIndex(e => e.Email, "IX_User_Email");
+            entity.HasIndex(e => e.Username, "UQ__User__Username").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__User__Email").IsUnique();
+
+            entity.Property(e => e.Username).HasMaxLength(50);
+            entity.Property(e => e.Password).HasMaxLength(255);
+            entity.Property(e => e.Email).HasMaxLength(100);
+            entity.Property(e => e.Active).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.IdRole).HasName("PK__Role__B19461A8");
+
+            entity.ToTable("Role");
+
+            entity.HasIndex(e => e.Name, "IX_Role_Name");
+            entity.HasIndex(e => e.Name, "UQ__Role__Name").IsUnique();
+
+            entity.Property(e => e.Name).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.HasKey(e => new { e.IdUser, e.IdRole }).HasName("PK__UserRole__UserRole");
+
+            entity.ToTable("UserRole");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.IdUser)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__UserRole__IdUser");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.IdRole)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__UserRole__IdRole");
         });
 
         OnModelCreatingPartial(modelBuilder);

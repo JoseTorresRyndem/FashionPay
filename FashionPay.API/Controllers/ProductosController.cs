@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using FashionPay.Application.DTOs.Producto;
-using FashionPay.Application.Exceptions;
 using FashionPay.Application.Services;
 using FashionPay.Core.Entities;
 using FashionPay.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FashionPay.Api.Controllers;
@@ -11,6 +11,7 @@ namespace FashionPay.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class ProductosController : ControllerBase
 {
     private readonly IProductoService _productoService;
@@ -28,15 +29,8 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<ProductoResponseDto>>> GetProducts()
     {
-        try
-        {
-            var productos = await _productoService.GetProductsActiveAsync();
-            return Ok(productos);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var productos = await _productoService.GetProductsActiveAsync();
+        return Ok(productos);
     }
 
     /// <summary>
@@ -48,19 +42,12 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ProductoResponseDto>> GetProduct(int id)
     {
-        try
+        var productoDto = await _productoService.GetProductByIdAsync(id);
+        if (productoDto == null)
         {
-            var productoDto = await _productoService.GetProductByIdAsync(id);
-            if (productoDto == null)
-            {
-                return NotFound(new { message = $"Producto con ID {id} no encontrado" });
-            }
-            return Ok(productoDto);
+            return NotFound(new { message = $"Producto con ID {id} no encontrado" });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        return Ok(productoDto);
     }
 
     /// <summary>
@@ -72,18 +59,11 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ProductoResponseDto>> GetProductByCode(string codigo)
     {
-        try
-        {
-            var productoDto = await _productoService.GetProductByCodeAsync(codigo);
-            if (productoDto == null)
-                return NotFound(new { message = $"Producto con CODIGO {codigo} no encontrado" });
+        var productoDto = await _productoService.GetProductByCodeAsync(codigo);
+        if (productoDto == null)
+            return NotFound(new { message = $"Producto con CODIGO {codigo} no encontrado" });
 
-            return Ok(productoDto);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        return Ok(productoDto);
     }
 
     /// <summary>
@@ -95,19 +75,11 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<ProductoResponseDto>>> GetProductosByProveedor(int proveedorId)
     {
-        try
-        {
-            var productosDto = await _productoService.GetProductsByProviderAsync(proveedorId);
-            if (productosDto == null)
-                return NotFound(new { message = $"Productos con ID {proveedorId} de proveedor no encontrados" });
+        var productosDto = await _productoService.GetProductsByProviderAsync(proveedorId);
+        if (productosDto == null)
+            return NotFound(new { message = $"Productos con ID {proveedorId} de proveedor no encontrados" });
 
-
-            return Ok(productosDto);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        return Ok(productosDto);
     }
 
     /// <summary>
@@ -119,20 +91,11 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<ProductoResponseDto>>> BuscarProductos([FromQuery] string termino)
     {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(termino) || termino.Length < 2)
-                return NotFound(new { message = "El término de búsqueda debe tener al menos 2 caracteres" });
+        if (string.IsNullOrWhiteSpace(termino) || termino.Length < 2)
+            return NotFound(new { message = "El término de búsqueda debe tener al menos 2 caracteres" });
 
-            var productosDto = await _productoService.SearchProductsAsync(termino);
-
-
-            return Ok(productosDto);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var productosDto = await _productoService.SearchProductsAsync(termino);
+        return Ok(productosDto);
     }
 
     /// <summary>
@@ -144,20 +107,8 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ProductoResponseDto>> CreateProducto(ProductoCreateDto productoDto)
     {
-        try
-        {
-            var producto = await _productoService.CreateProductAsync(productoDto);
-
-            return CreatedAtAction("GetProduct", new { id = producto.IdProducto }, producto);
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var producto = await _productoService.CreateProductAsync(productoDto);
+        return CreatedAtAction("GetProduct", new { id = producto.IdProducto }, producto);
     }
 
     /// <summary>
@@ -170,16 +121,8 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ProductoResponseDto>> UpdateProducto(int id, ProductoUpdateDto productoDto)
     {
-        try
-        {
-            var producto = await _productoService.UpdateProductAsync(id, productoDto);
-
-            return Ok(producto);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var producto = await _productoService.UpdateProductAsync(id, productoDto);
+        return Ok(producto);
     }
 
     /// <summary>
@@ -192,16 +135,21 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult> DeleteProducto(int id)
     {
-        try
-        {
-            await _productoService.DeleteProductAsync(id);
+        await _productoService.DeleteProductAsync(id);
+        return NoContent();
+    }
 
-
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+    /// <summary>
+    /// Reactiva un producto (soft delete)
+    /// </summary>
+    [HttpPatch("reactivate/{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult> ReactivateProducto(int id)
+    {
+        await _productoService.ReactivateProductAsync(id);
+        return NoContent();
     }
 }
