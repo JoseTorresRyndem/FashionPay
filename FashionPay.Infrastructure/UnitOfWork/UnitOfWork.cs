@@ -19,6 +19,9 @@ public class UnitOfWork : IUnitOfWork
     private IProductoRepository? _productos;
     private IProveedorRepository? _proveedores;
     private IEstadoCuentaRepository? _estadoCuentas;
+    private IUserRepository? _users;
+    private IRoleRepository? _roles;
+    private IUserRoleRepository? _userRoles;
 
     public UnitOfWork(FashionPayContext context)
     {
@@ -61,6 +64,21 @@ public class UnitOfWork : IUnitOfWork
     public IEstadoCuentaRepository EstadoCuentas
     {
         get { return _estadoCuentas ??= new EstadoCuentaRepository(_context); }
+    }
+
+    public IUserRepository Users
+    {
+        get { return _users ??= new UserRepository(_context); }
+    }
+
+    public IRoleRepository Roles
+    {
+        get { return _roles ??= new RoleRepository(_context); }
+    }
+
+    public IUserRoleRepository UserRoles
+    {
+        get { return _userRoles ??= new UserRoleRepository(_context); }
     }
 
     // Métodos de transacción

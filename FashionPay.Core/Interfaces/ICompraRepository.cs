@@ -14,4 +14,5 @@ public interface ICompraRepository : IBaseRepository<Compra>
         decimal? minAmount = null,
         decimal? maxAmount = null
     );
+    Task<IEnumerable<Compra>> GetComprasWithProductAsync(int productId);
 }

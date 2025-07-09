@@ -12,4 +12,5 @@ public interface IProductoService
     Task<IEnumerable<ProductoResponseDto>> SearchProductsAsync(string termino);
     Task<ProductoResponseDto> UpdateProductAsync(int id, ProductoUpdateDto productoDto);
     Task<bool> DeleteProductAsync(int id);
+    Task<ProductoResponseDto> ReactivateProductAsync(int id);
 }

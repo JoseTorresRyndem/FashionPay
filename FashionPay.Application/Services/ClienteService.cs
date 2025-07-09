@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using FashionPay.Core.Interfaces;
 using FashionPay.Application.DTOs.Cliente;
-using FashionPay.Application.Exceptions;
 using FashionPay.Core.Entities;
 
 namespace FashionPay.Application.Services;
@@ -34,10 +33,9 @@ public class ClienteService : IClienteService
     }
     public async Task<IEnumerable<ClienteResponseDto>> GetClientsByClassificationAsync(string clasificacion)
     {
-        // Validar clasificación
         var clasificacionUpper = clasificacion.ToUpper();
         if (!new[] { "CUMPLIDO", "RIESGOSO", "MOROSO" }.Contains(clasificacionUpper))
-            throw new BusinessException("Clasificación debe ser: CUMPLIDO, RIESGOSO o MOROSO");
+            throw new ArgumentException("Clasificación debe ser: CUMPLIDO, RIESGOSO o MOROSO");
 
         var clientes = await _unitOfWork.Clientes.GetClientsByClassificationAsync(clasificacionUpper);
         return _mapper.Map<IEnumerable<ClienteResponseDto>>(clientes);
@@ -68,11 +66,12 @@ public class ClienteService : IClienteService
     {
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(id);
         if (cliente == null)
-            throw new NotFoundException($"Cliente con ID {id} no encontrado");
+            throw new KeyNotFoundException($"Cliente con ID {id} no encontrado");
 
         // Mapear cambios y actualizar
         _mapper.Map(clienteDto, cliente);
         await _unitOfWork.Clientes.UpdateAsync(cliente);
+        await _unitOfWork.SaveChangesAsync();
 
         // Retornar cliente actualizado
         var clienteActualizado = await _unitOfWork.Clientes.GetByIdAsync(id);
@@ -82,16 +81,17 @@ public class ClienteService : IClienteService
     {
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(id);
         if (cliente == null)
-            throw new NotFoundException($"Cliente con ID {id} no encontrado");
+            throw new KeyNotFoundException($"Cliente con ID {id} no encontrado");
 
         // Validar que no tenga deuda pendiente
         var deudaTotal = await _unitOfWork.Clientes.GetTotalDebtAsync(id);
         if (deudaTotal > 0)
-            throw new BusinessException($"No se puede eliminar cliente con deuda pendiente: ${deudaTotal:F2}");
+            throw new InvalidOperationException($"No se puede eliminar cliente con deuda pendiente: ${deudaTotal:F2}");
 
         // Soft delete
         cliente.Activo = false;
         await _unitOfWork.Clientes.UpdateAsync(cliente);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }
@@ -99,7 +99,7 @@ public class ClienteService : IClienteService
     {
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(id);
         if (cliente == null)
-            throw new NotFoundException($"Cliente con ID {id} no encontrado");
+            throw new KeyNotFoundException($"Cliente con ID {id} no encontrado");
 
         await _unitOfWork.Clientes.ExecuteCalculateBalanceAsync(id);
         return true;
@@ -108,7 +108,7 @@ public class ClienteService : IClienteService
     {
         var clienteExistente = await _unitOfWork.Clientes.GetByEmailAsync(email);
         if (clienteExistente != null)
-            throw new BusinessException($"Ya existe un cliente con el email '{email}'");
+            throw new ArgumentException($"Ya existe un cliente con el email '{email}'");
     }
 }
 

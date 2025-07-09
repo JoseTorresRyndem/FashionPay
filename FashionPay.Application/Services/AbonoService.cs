@@ -2,7 +2,7 @@
 using FashionPay.Core.Interfaces;
 using FashionPay.Core.Entities;
 using FashionPay.Application.DTOs.Abono;
-using FashionPay.Application.Exceptions;
+using FashionPay.Application.Common;
 
 namespace FashionPay.Application.Services;
 
@@ -25,7 +25,7 @@ public class AbonoService : IAbonoService
         // 2. Buscar el pago más antiguo pendiente del cliente (lógica de negocio)
         var pagoPendiente = await FindOldestPendingPaymentAsync(abonoDto.IdCliente);
         if (pagoPendiente == null)
-            throw new BusinessException("El cliente no tiene pagos pendientes");
+            throw new InvalidOperationException("El cliente no tiene pagos pendientes");
         try
         {
             var abono = await _unitOfWork.Abonos.ApplyFullPaymentAsync(
@@ -35,13 +35,15 @@ public class AbonoService : IAbonoService
                 abonoDto.Observaciones,
                 pagoPendiente);
 
+            await _unitOfWork.SaveChangesAsync();
+
             // 4. Retornar respuesta completa (responsabilidad del Service)
             var abonoCompleto = await _unitOfWork.Abonos.GetByIdAsync(abono.IdAbono);
             return _mapper.Map<AbonoResponseDto>(abonoCompleto!);
         }
         catch (Exception ex)
         {
-            throw new BusinessException("Error al registrar pago pendiente: " + ex.Message);
+            throw new InvalidOperationException("Error al registrar pago pendiente: " + ex.Message);
         }
     }
 
@@ -57,7 +59,7 @@ public class AbonoService : IAbonoService
         // Validar que el cliente existe
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(clienteId);
         if (cliente == null)
-            throw new NotFoundException($"Cliente con ID {clienteId} no encontrado");
+            throw new KeyNotFoundException($"Cliente con ID {clienteId} no encontrado");
 
         var abonos = await _unitOfWork.Abonos.GetPaymentsByClientAsync(clienteId);
         return _mapper.Map<IEnumerable<AbonoResponseDto>>(abonos);
@@ -84,7 +86,7 @@ public class AbonoService : IAbonoService
         // Validar que el cliente existe
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(clienteId);
         if (cliente == null)
-            throw new NotFoundException($"Cliente con ID {clienteId} no encontrado");
+            throw new KeyNotFoundException($"Cliente con ID {clienteId} no encontrado");
 
         // Obtener abonos del cliente
         var abonos = await _unitOfWork.Abonos.GetPaymentsByClientAsync(clienteId);
@@ -115,21 +117,20 @@ public class AbonoService : IAbonoService
         // Validar que el cliente existe y está activo
         var cliente = await _unitOfWork.Clientes.GetByIdAsync(abonoDto.IdCliente);
         if (cliente == null || !cliente.Activo)
-            throw new BusinessException("El cliente seleccionado no existe o está inactivo");
+            throw new ArgumentException("El cliente seleccionado no existe o está inactivo");
 
         // Validar que el cliente tiene deuda pendiente
         var deudaTotal = await _unitOfWork.Clientes.GetTotalDebtAsync(abonoDto.IdCliente);
         if (deudaTotal <= 0)
-            throw new BusinessException("El cliente no tiene deuda pendiente");
+            throw new InvalidOperationException("El cliente no tiene deuda pendiente");
 
         // Validar que el monto del abono no exceda la deuda total
         if (abonoDto.MontoAbono > deudaTotal)
-            throw new BusinessException($"El monto del abono (${abonoDto.MontoAbono:F2}) excede la deuda total (${deudaTotal:F2})");
+            throw new ArgumentException($"El monto del abono (${abonoDto.MontoAbono:F2}) excede la deuda total (${deudaTotal:F2})");
 
         // Validar forma de pago
-        var formasPagoValidas = new[] { "EFECTIVO", "TRANSFERENCIA", "TARJETA" };
-        if (!formasPagoValidas.Contains(abonoDto.FormaPago.ToUpper()))
-            throw new BusinessException("Forma de pago no válida");
+        if (!BusinessConstants.Payment.VALID_PAYMENT_METHODS.Contains(abonoDto.FormaPago.ToUpper()))
+            throw new ArgumentException($"Forma de pago no válida. Métodos válidos: {string.Join(", ", BusinessConstants.Payment.VALID_PAYMENT_METHODS)}");
     }
 
     private async Task<PlanPago?> FindOldestPendingPaymentAsync(int clienteId)

@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using FashionPay.Application.Services;
 using FashionPay.Application.DTOs.Proveedor;
-using FashionPay.Application.Exceptions;
 
 namespace FashionPay.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class ProveedoresController : ControllerBase
 {
     private readonly IProveedorService _proveedorService;
@@ -25,15 +26,8 @@ public class ProveedoresController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<ProveedorResponseDto>>> GetProviders()
     {
-        try
-        {
-            var proveedores = await _proveedorService.GetProvidersAsync();
-            return Ok(proveedores);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var proveedores = await _proveedorService.GetProvidersAsync();
+        return Ok(proveedores);
     }
 
     /// <summary>
@@ -45,20 +39,13 @@ public class ProveedoresController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ProveedorResponseDto>> GetProviderById(int id)
     {
-        try
+        var proveedor = await _proveedorService.GetProviderByIdAsync(id);
+        if (proveedor == null)
         {
-            var proveedor = await _proveedorService.GetProviderByIdAsync(id);
-            if (proveedor == null)
-            {
-                return NotFound(new { message = $"Proveedor con ID {id} no encontrado" });
-            }
+            return NotFound(new { message = $"Proveedor con ID {id} no encontrado" });
+        }
 
-            return Ok(proveedor);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        return Ok(proveedor);
     }
 
     /// <summary>
@@ -69,16 +56,8 @@ public class ProveedoresController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<ProveedorResponseDto>>> SearchProviders([FromQuery] ProveedorFiltrosDto filtros)
     {
-        try
-        {
-            var proveedores = await _proveedorService.GetProvidersWithFiltersAsync(filtros);
-
-            return Ok(proveedores);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var proveedores = await _proveedorService.GetProvidersWithFiltersAsync(filtros);
+        return Ok(proveedores);
     }
 
     /// <summary>
@@ -90,20 +69,8 @@ public class ProveedoresController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ProveedorResponseDto>> CreateProveedor(ProveedorCreateDto proveedorDto)
     {
-        try
-        {
-            var proveedor = await _proveedorService.CreateProviderAsync(proveedorDto);
-
-            return CreatedAtAction(nameof(GetProviderById), new { id = proveedor.IdProveedor }, proveedor);
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var proveedor = await _proveedorService.CreateProviderAsync(proveedorDto);
+        return CreatedAtAction(nameof(GetProviderById), new { id = proveedor.IdProveedor }, proveedor);
     }
 
     /// <summary>
@@ -116,24 +83,8 @@ public class ProveedoresController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ProveedorResponseDto>> UpdateProveedor(int id, ProveedorUpdateDto proveedorDto)
     {
-        try
-        {
-            var proveedor = await _proveedorService.UpdateProviderAsync(id, proveedorDto);
-
-            return Ok(proveedor);
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var proveedor = await _proveedorService.UpdateProviderAsync(id, proveedorDto);
+        return Ok(proveedor);
     }
 
     /// <summary>
@@ -146,24 +97,8 @@ public class ProveedoresController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult> DeleteProveedor(int id)
     {
-        try
-        {
-            await _proveedorService.DesactivateProviderAsync(id);
-
-            return NoContent();
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (BusinessException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        await _proveedorService.DesactivateProviderAsync(id);
+        return NoContent();
     }
 
     /// <summary>
@@ -175,19 +110,7 @@ public class ProveedoresController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ProveedorResponseDto>> ReactivarProveedor(int id)
     {
-        try
-        {
-            var proveedor = await _proveedorService.ReactivateProviderAsync(id);
-
-            return Ok(proveedor);
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-        }
+        var proveedor = await _proveedorService.ReactivateProviderAsync(id);
+        return Ok(proveedor);
     }
 }

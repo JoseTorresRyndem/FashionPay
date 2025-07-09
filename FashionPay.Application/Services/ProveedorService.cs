@@ -2,7 +2,6 @@
 using FashionPay.Core.Interfaces;
 using FashionPay.Core.Entities;
 using FashionPay.Application.DTOs.Proveedor;
-using FashionPay.Application.Exceptions;
 
 namespace FashionPay.Application.Services;
 
@@ -99,7 +98,7 @@ public class ProveedorService : IProveedorService
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(id);
         if (proveedor == null)
-            throw new NotFoundException($"Proveedor con ID {id} no encontrado");
+            throw new KeyNotFoundException($"Proveedor con ID {id} no encontrado");
 
         await ValidProviderUpdateAsync(proveedorDto, id);
 
@@ -118,13 +117,13 @@ public class ProveedorService : IProveedorService
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(id);
         if (proveedor == null)
-            throw new NotFoundException($"Proveedor con ID {id} no encontrado");
+            throw new KeyNotFoundException($"Proveedor con ID {id} no encontrado");
 
         // Validar que no tenga productos activos
         var productosActivos = await _unitOfWork.Proveedores.GetProviderWithProductsAsync(id);
         if (productosActivos != null)
         {
-            throw new BusinessException($"No se puede desactivar el proveedor porque tiene {productosActivos.Productos.Count()} productos activos. Desactive primero todos sus productos.");
+            throw new InvalidOperationException($"No se puede desactivar el proveedor porque tiene {productosActivos.Productos.Count()} productos activos. Desactive primero todos sus productos.");
         }
 
         proveedor.Activo = false;
@@ -136,7 +135,7 @@ public class ProveedorService : IProveedorService
     {
         var proveedor = await _unitOfWork.Proveedores.GetByIdAsync(id);
         if (proveedor == null)
-            throw new NotFoundException($"Proveedor con ID {id} no encontrado");
+            throw new KeyNotFoundException($"Proveedor con ID {id} no encontrado");
 
         proveedor.Activo = true;
         await _unitOfWork.Proveedores.UpdateAsync(proveedor);
@@ -161,14 +160,14 @@ public class ProveedorService : IProveedorService
     {
         // Validar nombre único
         if (await ExistProviderByNameAsync(proveedorDto.Nombre))
-            throw new BusinessException($"Ya existe un proveedor con el nombre '{proveedorDto.Nombre}'");
+            throw new ArgumentException($"Ya existe un proveedor con el nombre '{proveedorDto.Nombre}'");
 
         // Validar email único si se proporciona
         if (!string.IsNullOrEmpty(proveedorDto.Email))
         {
             var proveedores = await _unitOfWork.Proveedores.GetAllAsync();
             if (proveedores.Any(p => !string.IsNullOrEmpty(p.Email) && p.Email.Equals(proveedorDto.Email, StringComparison.OrdinalIgnoreCase)))
-                throw new BusinessException($"Ya existe un proveedor con el email '{proveedorDto.Email}'");
+                throw new ArgumentException($"Ya existe un proveedor con el email '{proveedorDto.Email}'");
         }
     }
 
@@ -176,7 +175,7 @@ public class ProveedorService : IProveedorService
     {
         // Validar nombre único
         if (await ExistProviderByNameAsync(proveedorDto.Nombre, id))
-            throw new BusinessException($"Ya existe otro proveedor con el nombre '{proveedorDto.Nombre}'");
+            throw new ArgumentException($"Ya existe otro proveedor con el nombre '{proveedorDto.Nombre}'");
 
         // Validar email único si se proporciona
         if (!string.IsNullOrEmpty(proveedorDto.Email))
@@ -184,7 +183,7 @@ public class ProveedorService : IProveedorService
             var proveedores = await _unitOfWork.Proveedores.GetAllAsync();
             if (proveedores.Any(p => p.IdProveedor != id && !string.IsNullOrEmpty(p.Email) &&
                                     p.Email.Equals(proveedorDto.Email, StringComparison.OrdinalIgnoreCase)))
-                throw new BusinessException($"Ya existe otro proveedor con el email '{proveedorDto.Email}'");
+                throw new ArgumentException($"Ya existe otro proveedor con el email '{proveedorDto.Email}'");
         }
     }
 

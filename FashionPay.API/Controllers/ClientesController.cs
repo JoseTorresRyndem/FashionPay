@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using FashionPay.Application.DTOs.Cliente;
-using FashionPay.Application.Exceptions;
 using FashionPay.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FashionPay.API.Controllers
@@ -9,6 +9,7 @@ namespace FashionPay.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
+    [Authorize]
     public class ClientesController : ControllerBase
     {
         private readonly IClienteService _clienteService;
@@ -26,15 +27,8 @@ namespace FashionPay.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<ClienteResponseDto>>> GetClientes()
         {
-            try
-            {
-                var clientes = await _clienteService.GetClientsAsync();
-                return Ok(clientes);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
-            }
+            var clientes = await _clienteService.GetClientsAsync();
+            return Ok(clientes);
         }
         /// <summary>
         /// Obtiene un cliente por ID
@@ -45,20 +39,13 @@ namespace FashionPay.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ClienteResponseDto>> GetCliente(int id)
         {
-            try
+            var cliente = await _clienteService.GetClientByIdAsync(id);
+            if (cliente == null)
             {
-                var cliente = await _clienteService.GetClientByIdAsync(id);
-                if (cliente == null)
-                {
-                    return NotFound(new { message = $"Cliente con ID {id} no encontrado" });
-                }
+                return NotFound(new { message = $"Cliente con ID {id} no encontrado" });
+            }
 
-                return Ok(cliente);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-            }
+            return Ok(cliente);
         }
 
         /// <summary>
@@ -70,20 +57,13 @@ namespace FashionPay.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ClienteResponseDto>> GetClienteByEmail(string email)
         {
-            try
+            var cliente = await _clienteService.GetClientByEmailAsync(email);
+            if (cliente == null)
             {
-                var cliente = await _clienteService.GetClientByEmailAsync(email);
-                if (cliente == null)
-                {
-                    return NotFound(new { message = $"Cliente con email {email} no encontrado" });
-                }
+                return NotFound(new { message = $"Cliente con email {email} no encontrado" });
+            }
 
-                return Ok(cliente);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-            }
+            return Ok(cliente);
         }
         /// <summary>
         /// Obtiene clientes por clasificación
@@ -94,20 +74,8 @@ namespace FashionPay.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<ClienteResponseDto>>> GetClientesByClasificacion(string clasificacion)
         {
-            try
-            {
-                var clientes = await _clienteService.GetClientsByClassificationAsync(clasificacion);
-
-                return Ok(clientes);
-            }
-            catch (BusinessException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-            }
+            var clientes = await _clienteService.GetClientsByClassificationAsync(clasificacion);
+            return Ok(clientes);
         }
         /// <summary>
         /// Crea un nuevo cliente
@@ -118,21 +86,8 @@ namespace FashionPay.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ClienteResponseDto>> CreateCliente(ClienteCreateDto clienteDto)
         {
-            try
-            {
-                var cliente = await _clienteService.CreateClientAsync(clienteDto);
-
-                return CreatedAtAction("GetCliente", new { id = cliente.IdCliente }, cliente);
-            }
-            catch (BusinessException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-            }
-
+            var cliente = await _clienteService.CreateClientAsync(clienteDto);
+            return CreatedAtAction("GetCliente", new { id = cliente.IdCliente }, cliente);
         }
 
         /// <summary>
@@ -145,24 +100,8 @@ namespace FashionPay.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ClienteResponseDto>> UpdateCliente(int id, ClienteUpdateDto clienteDto)
         {
-            try
-            {
-                var cliente = await _clienteService.UpdateClientAsync(id, clienteDto);
-
-                return Ok(cliente);
-            }
-            catch (NotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (BusinessException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor" , error = ex.Message });
-            }
+            var cliente = await _clienteService.UpdateClientAsync(id, clienteDto);
+            return Ok(cliente);
         }
 
 
@@ -176,24 +115,8 @@ namespace FashionPay.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> DeleteCliente(int id)
         {
-            try
-            {
-                await _clienteService.DeleteClientAsync(id);
-
-                return NoContent();
-            }
-            catch (NotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (BusinessException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-            }
+            await _clienteService.DeleteClientAsync(id);
+            return NoContent();
         }
 
 
@@ -206,25 +129,13 @@ namespace FashionPay.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> RecalcularSaldo(int id)
         {
-            try
+            await _clienteService.RecalculateBalanceAsync(id);
+            return Ok(new
             {
-                await _clienteService.RecalculateBalanceAsync(id);
-
-                return Ok(new
-                {
-                    message = "Saldo recalculado exitosamente",
-                    clienteId = id,
-                    timestamp = DateTime.Now
-                });
-            }
-            catch (NotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message  });
-            }
+                message = "Saldo recalculado exitosamente",
+                clienteId = id,
+                timestamp = DateTime.Now
+            });
         }
     }
 }

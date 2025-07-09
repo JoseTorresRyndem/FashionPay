@@ -7,7 +7,7 @@ public interface IAbonoRepository : IBaseRepository<Abono>
     Task<IEnumerable<Abono>> GetPaymentsByClientAsync(int clientId);
     Task<IEnumerable<Abono>> GetPaymentsByDateAsync(DateTime date);
     Task<Abono> ApplyFullPaymentAsync(
-            int clienteId,
+        int clienteId,
         decimal montoAbono,
         string formaPago,
         string? observaciones,

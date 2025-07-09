@@ -153,12 +153,6 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
 
                 _context.Compras.Update(compra);
             }
-
-            // Guardar cambios si hay compras para liberar
-            if (comprasParaLiberar.Any())
-            {
-                await _context.SaveChangesAsync();
-            }
         }
         catch (Exception ex)
         {
