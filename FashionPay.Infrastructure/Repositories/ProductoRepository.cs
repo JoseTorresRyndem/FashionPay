@@ -35,16 +35,4 @@ public class ProductoRepository : BaseRepository<Producto>, IProductoRepository
             .Include(p => p.IdProveedorNavigation)
             .FirstOrDefaultAsync(p => p.Codigo == codigo);
     }
-
-    public async Task<IEnumerable<Producto>> SearchProductsAsync(string termino)
-    {
-        return await _dbSet
-            .Include(p => p.IdProveedorNavigation)
-            .Where(p => p.Activo == true &&
-                       (p.Nombre.Contains(termino) ||
-                        p.Codigo.Contains(termino) ||
-                        p.Descripcion!.Contains(termino)))
-            .OrderBy(p => p.Nombre)
-            .ToListAsync();
-    }
 }

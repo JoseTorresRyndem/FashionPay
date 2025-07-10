@@ -9,7 +9,6 @@ public interface IProductoService
     Task<ProductoResponseDto?> GetProductByCodeAsync(string codigo);
     Task<IEnumerable<ProductoResponseDto>> GetProductsActiveAsync();
     Task<IEnumerable<ProductoResponseDto>> GetProductsByProviderAsync(int proveedorId);
-    Task<IEnumerable<ProductoResponseDto>> SearchProductsAsync(string termino);
     Task<ProductoResponseDto> UpdateProductAsync(int id, ProductoUpdateDto productoDto);
     Task<bool> DeleteProductAsync(int id);
     Task<ProductoResponseDto> ReactivateProductAsync(int id);

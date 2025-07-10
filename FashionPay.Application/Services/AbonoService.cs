@@ -30,6 +30,7 @@ public class AbonoService : IAbonoService
         {
             var abono = await _unitOfWork.Abonos.ApplyFullPaymentAsync(
                 abonoDto.IdCliente,
+                abonoDto.IdCompra,
                 abonoDto.MontoAbono,
                 abonoDto.FormaPago,
                 abonoDto.Observaciones,

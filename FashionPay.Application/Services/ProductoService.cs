@@ -52,12 +52,6 @@ public class ProductoService : IProductoService
         return _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
     }
 
-    public async Task<IEnumerable<ProductoResponseDto>> SearchProductsAsync(string termino)
-    {
-        var productos = await _unitOfWork.Productos.SearchProductsAsync(termino);
-        return _mapper.Map<IEnumerable<ProductoResponseDto>>(productos);
-    }
-
     public async Task<ProductoResponseDto> UpdateProductAsync(int id, ProductoUpdateDto productoDto)
     {
         var producto = await _unitOfWork.Productos.GetByIdAsync(id);
