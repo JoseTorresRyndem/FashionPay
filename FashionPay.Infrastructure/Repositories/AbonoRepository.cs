@@ -68,7 +68,8 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             .ToListAsync();
     }
     public async Task<Abono> ApplyFullPaymentAsync(
-     int clienteId,
+     int IdCliente,
+     int IdCompra,
      decimal montoAbono,
      string formaPago,
      string? observaciones,
@@ -85,12 +86,14 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
 
             await _context.Database.ExecuteSqlRawAsync(@"
             EXEC sp_AplicarAbono
-                @ClienteId = {0}, 
-                @MontoAbono = {1}, 
-                @FormaPago = {2}, 
-                @Observaciones = {3}, 
+                @IdCliente = {0}, 
+                @IdCompra = {1},
+                @MontoAbono = {2}, 
+                @FormaPago = {3}, 
+                @Observaciones = {4}, 
                 @AbonoId = @AbonoId OUTPUT",
-                clienteId,
+                IdCliente,
+                IdCompra,
                 montoAbono,
                 formaPago,
                 observaciones ?? (object)DBNull.Value,
@@ -99,7 +102,7 @@ public class AbonoRepository : BaseRepository<Abono>, IAbonoRepository
             // Obtener el ID del abono creado
             var abonoId = (int)abonoIdParameter.Value;
 
-            await VerifyAndReleaseCreditAsync(clienteId);
+            await VerifyAndReleaseCreditAsync(IdCliente);
 
             var abono = await _dbSet
                 .Include(a => a.IdClienteNavigation)

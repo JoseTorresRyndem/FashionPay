@@ -83,22 +83,6 @@ public class ProductosController : ControllerBase
     }
 
     /// <summary>
-    /// Busca productos por término (nombre, código, descripción)
-    /// </summary>
-    [HttpGet("buscar")]
-    [ProducesResponseType(typeof(IEnumerable<ProductoResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<ProductoResponseDto>>> BuscarProductos([FromQuery] string termino)
-    {
-        if (string.IsNullOrWhiteSpace(termino) || termino.Length < 2)
-            return NotFound(new { message = "El término de búsqueda debe tener al menos 2 caracteres" });
-
-        var productosDto = await _productoService.SearchProductsAsync(termino);
-        return Ok(productosDto);
-    }
-
-    /// <summary>
     /// Crea un nuevo producto
     /// </summary>
     [HttpPost]

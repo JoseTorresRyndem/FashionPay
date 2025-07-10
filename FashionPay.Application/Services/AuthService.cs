@@ -40,7 +40,7 @@ public class AuthService : IAuthService
         return new TokenResponseDto
         {
             Token = token,
-            Expires = DateTime.UtcNow.AddHours(double.Parse(_configuration["Jwt:ExpirationHours"] ?? "24")),
+            Expires = DateTime.UtcNow.AddHours(double.Parse(_configuration["JwtSettings:ExpirationHours"] ?? "24")),
             Username = user.Username,
             Email = user.Email,
             Roles = user.UserRoles.Select(ur => ur.Role.Name)
@@ -91,16 +91,16 @@ public class AuthService : IAuthService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? "");
+            var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:Key"] ?? "");
             
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuer = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidIssuer = _configuration["JwtSettings:Issuer"],
                 ValidateAudience = true,
-                ValidAudience = _configuration["Jwt:Audience"],
+                ValidAudience = _configuration["JwtSettings:Audience"],
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);
@@ -116,7 +116,7 @@ public class AuthService : IAuthService
     public Task<string> GenerateTokenAsync(UserResponseDto user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? "");
+        var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:Key"] ?? "");
         
         var claims = new List<Claim>
         {
@@ -133,10 +133,10 @@ public class AuthService : IAuthService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(double.Parse(_configuration["Jwt:ExpirationHours"] ?? "24")),
+            Expires = DateTime.UtcNow.AddHours(double.Parse(_configuration["JwtSettings:ExpirationHours"] ?? "24")),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-            Issuer = _configuration["Jwt:Issuer"],
-            Audience = _configuration["Jwt:Audience"]
+            Issuer = _configuration["JwtSettings:Issuer"],
+            Audience = _configuration["JwtSettings:Audience"]
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);

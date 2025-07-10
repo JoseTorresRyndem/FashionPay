@@ -7,5 +7,4 @@ public interface IProductoRepository : IBaseRepository<Producto>
     Task<IEnumerable<Producto>> GetProductsActiveAsync();
     Task<IEnumerable<Producto>> GetProductsByProviderAsync(int proveedorId);
     Task<Producto?> GetByCodeAsync(string codigo);
-    Task<IEnumerable<Producto>> SearchProductsAsync(string termino);
 }
