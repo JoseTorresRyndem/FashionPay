@@ -23,7 +23,7 @@ public class AbonosController : ControllerBase
     /// Obtiene todos los abonos con filtros opcionales - Solo Admin o CollectionsAgent
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = BusinessConstants.Roles.Combined.ADMIN_OR_COLLECTIONS_AGENT)]
+    [Authorize(Roles = BusinessConstants.Roles.Combined.ADMIN)]
     [ProducesResponseType(typeof(IEnumerable<AbonoResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<AbonoResponseDto>>> GetAbonos([FromQuery] AbonoFiltrosDto filtros)
@@ -54,7 +54,7 @@ public class AbonosController : ControllerBase
     /// Obtiene abonos por cliente - Solo Admin o CollectionsAgent
     /// </summary>
     [HttpGet("cliente/{clienteId}")]
-    [Authorize(Roles = BusinessConstants.Roles.Combined.ADMIN_OR_COLLECTIONS_AGENT)]
+    [Authorize(Roles = BusinessConstants.Roles.Combined.ADMIN)]
     [ProducesResponseType(typeof(IEnumerable<AbonoResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -68,7 +68,7 @@ public class AbonosController : ControllerBase
     /// Obtiene el resumen de pagos de un cliente - Solo Admin o CollectionsAgent
     /// </summary>
     [HttpGet("cliente/{clienteId}/resumen")]
-    [Authorize(Roles = BusinessConstants.Roles.Combined.ADMIN_OR_COLLECTIONS_AGENT)]
+    [Authorize(Roles = BusinessConstants.Roles.Combined.ADMIN)]
     [ProducesResponseType(typeof(ResumenPagosClienteDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

@@ -59,7 +59,7 @@ public static class BusinessConstants
         
         public static class Combined
         {
-            public const string ADMIN_OR_COLLECTIONS_AGENT = "Admin";
+            public const string ADMIN = "Admin";
             public const string AUTHORIZED_USER = "Admin,Operator,User";
         }
     }
