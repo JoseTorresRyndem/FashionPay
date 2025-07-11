@@ -50,4 +50,17 @@ public static class BusinessConstants
         public const int MAX_CODE_LENGTH = 50;
         public const int MIN_SEARCH_TERM_LENGTH = 2;
     }
+
+    public static class Roles
+    {
+        public const string ADMIN = "Admin";
+        public const string OPERATOR = "Operator";
+        public const string USER = "User";
+        
+        public static class Combined
+        {
+            public const string ADMIN = "Admin";
+            public const string AUTHORIZED_USER = "Admin,Operator,User";
+        }
+    }
 }

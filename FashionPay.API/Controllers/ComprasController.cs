@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using FashionPay.Application.Services;
 using FashionPay.Application.DTOs.Compra;
+using FashionPay.Application.Common;
 
 namespace FashionPay.Api.Controllers;
 
@@ -18,9 +19,10 @@ public class ComprasController : ControllerBase
         _compraService = compraService;
     }
     /// <summary>
-    /// Obtiene todas las compras
+    /// Obtiene todas las compras - Solo SystemAdmin
     /// </summary>
     [HttpGet]
+    [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
     [ProducesResponseType(typeof(IEnumerable<CompraResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<CompraResponseDto>>> GetCompras()
@@ -29,9 +31,10 @@ public class ComprasController : ControllerBase
         return Ok(compras);
     }
     /// <summary>
-    /// Obtiene una compra por ID
+    /// Obtiene una compra por ID - Usuario autorizado
     /// </summary>
     [HttpGet("{id}")]
+    [Authorize(Roles = BusinessConstants.Roles.Combined.AUTHORIZED_USER)]
     [ProducesResponseType(typeof(CompraResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -58,9 +61,10 @@ public class ComprasController : ControllerBase
         return Ok(compras);
     }
     /// <summary>
-    /// Busca compras con filtros
+    /// Busca compras con filtros - Solo SystemAdmin
     /// </summary>
     [HttpGet("buscar")]
+    [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
     [ProducesResponseType(typeof(IEnumerable<CompraResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<CompraResponseDto>>> BuscarCompras([FromQuery] CompraFiltrosDto filtros)
@@ -69,9 +73,10 @@ public class ComprasController : ControllerBase
         return Ok(compras);
     }
     /// <summary>
-    /// Crea una nueva compra a crédito
+    /// Crea una nueva compra a crédito - Solo User
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = BusinessConstants.Roles.USER)]
     [ProducesResponseType(typeof(CompraResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
