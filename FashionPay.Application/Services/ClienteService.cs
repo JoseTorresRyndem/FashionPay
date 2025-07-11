@@ -40,6 +40,16 @@ public class ClienteService : IClienteService
         var clientes = await _unitOfWork.Clientes.GetClientsByClassificationAsync(clasificacionUpper);
         return _mapper.Map<IEnumerable<ClienteResponseDto>>(clientes);
     }
+    
+    public async Task<EstadoCuentaDto?> GetClientAccountStatusAsync(int clienteId)
+    {
+        var cliente = await _unitOfWork.Clientes.GetByIdAsync(clienteId);
+        if (cliente == null)
+            throw new KeyNotFoundException($"Cliente con ID {clienteId} no encontrado");
+
+        var estadoCuenta = await _unitOfWork.EstadoCuentas.FirstOrDefaultAsync(ec => ec.IdCliente == clienteId);
+        return estadoCuenta != null ? _mapper.Map<EstadoCuentaDto>(estadoCuenta) : null;
+    }
     public async Task<ClienteResponseDto> CreateClientAsync(ClienteCreateDto clienteDto)
     {
         await ValidateUniqueEmailAsync(clienteDto.Email);

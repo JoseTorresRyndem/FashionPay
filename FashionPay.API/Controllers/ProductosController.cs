@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using FashionPay.Application.DTOs.Producto;
 using FashionPay.Application.Services;
+using FashionPay.Application.Common;
 using FashionPay.Core.Entities;
 using FashionPay.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -83,9 +84,10 @@ public class ProductosController : ControllerBase
     }
 
     /// <summary>
-    /// Crea un nuevo producto
+    /// Crea un nuevo producto - Solo Admin
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
     [ProducesResponseType(typeof(ProductoResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -96,9 +98,10 @@ public class ProductosController : ControllerBase
     }
 
     /// <summary>
-    /// Actualiza un producto existente
+    /// Actualiza un producto existente - Solo Admin
     /// </summary>
     [HttpPut("{id}")]
+    [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
     [ProducesResponseType(typeof(ProductoResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -110,9 +113,10 @@ public class ProductosController : ControllerBase
     }
 
     /// <summary>
-    /// Desactiva un producto (soft delete)
+    /// Desactiva un producto (soft delete) - Solo Admin
     /// </summary>
     [HttpDelete("{id}")]
+    [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -124,9 +128,10 @@ public class ProductosController : ControllerBase
     }
 
     /// <summary>
-    /// Reactiva un producto (soft delete)
+    /// Reactiva un producto (soft delete) - Solo Admin
     /// </summary>
     [HttpPatch("reactivate/{id}")]
+    [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

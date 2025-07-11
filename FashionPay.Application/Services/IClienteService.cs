@@ -9,6 +9,7 @@ public interface IClienteService
     Task<ClienteResponseDto?> GetClientByEmailAsync(string email);
     Task<IEnumerable<ClienteResponseDto>> GetClientsAsync();
     Task<IEnumerable<ClienteResponseDto>> GetClientsByClassificationAsync(string classification);
+    Task<EstadoCuentaDto?> GetClientAccountStatusAsync(int clienteId);
     Task<ClienteResponseDto> UpdateClientAsync(int id, ClienteUpdateDto clientDto);
     Task<bool> DeleteClientAsync(int id);
     Task<bool> RecalculateBalanceAsync(int id);

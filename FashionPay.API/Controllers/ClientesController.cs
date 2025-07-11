@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using FashionPay.Application.DTOs.Cliente;
 using FashionPay.Application.Services;
+using FashionPay.Application.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -77,10 +78,30 @@ namespace FashionPay.API.Controllers
             var clientes = await _clienteService.GetClientsByClassificationAsync(clasificacion);
             return Ok(clientes);
         }
+        
         /// <summary>
-        /// Crea un nuevo cliente
+        /// Obtiene el estado financiero de un cliente - Solo Operator
+        /// </summary>
+        [HttpGet("{id}/estado-financiero")]
+        [Authorize(Roles = BusinessConstants.Roles.OPERATOR)]
+        [ProducesResponseType(typeof(EstadoCuentaDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<EstadoCuentaDto>> GetEstadoFinanciero(int id)
+        {
+            var estadoCuenta = await _clienteService.GetClientAccountStatusAsync(id);
+            if (estadoCuenta == null)
+            {
+                return NotFound(new { message = $"Estado de cuenta para cliente con ID {id} no encontrado" });
+            }
+
+            return Ok(estadoCuenta);
+        }
+        /// <summary>
+        /// Crea un nuevo cliente - Solo Admin
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
         [ProducesResponseType(typeof(ClienteResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -91,9 +112,10 @@ namespace FashionPay.API.Controllers
         }
 
         /// <summary>
-        /// Actualiza un cliente existente
+        /// Actualiza un cliente existente - Solo Admin
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
         [ProducesResponseType(typeof(ClienteResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -106,9 +128,10 @@ namespace FashionPay.API.Controllers
 
 
         /// <summary>
-        /// Desactiva un cliente (soft delete)
+        /// Desactiva un cliente (soft delete) - Solo Admin
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -121,9 +144,10 @@ namespace FashionPay.API.Controllers
 
 
         /// <summary>
-        /// Recalcula el estado de cuenta de un cliente
+        /// Recalcula el estado de cuenta de un cliente - Solo Admin
         /// </summary>
         [HttpPost("{id}/recalcular-saldo")]
+        [Authorize(Roles = BusinessConstants.Roles.ADMIN)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
