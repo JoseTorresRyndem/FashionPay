@@ -38,27 +38,23 @@ namespace FashionPay.Infrastructure.Repositories
         public virtual async Task<T> AddAsync(T entity)
         {
             var entityEntry = await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
             return entityEntry.Entity;
         }
 
         public virtual async Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities)
         {
             await _dbSet.AddRangeAsync(entities);
-            await _context.SaveChangesAsync();
             return entities;
         }
 
         public virtual async Task UpdateAsync(T entity)
         {
             _dbSet.Update(entity);
-            await _context.SaveChangesAsync();
         }
 
         public virtual async Task DeleteAsync(T entity)
         {
             _dbSet.Remove(entity);
-            await _context.SaveChangesAsync();
         }
 
         public virtual async Task DeleteAsync(int id)

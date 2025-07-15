@@ -31,28 +31,42 @@ public partial class FashionPayContext : DbContext
 
     public virtual DbSet<Producto> Productos { get; set; }
 
-    public virtual DbSet<Proveedor> Proveedors { get; set; }
+    public virtual DbSet<Proveedor> Proveedores { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<UserRole> UserRoles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Server=RYNL044\\JOSETRYNDEMSQL;Database=FashionPay;User Id=sa;Password=root;TrustServerCertificate=true;");
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            // No fallback connection string for security - must be configured via DI
+            throw new InvalidOperationException("Database connection string must be configured via dependency injection. Check your appsettings.json and Program.cs configuration.");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Abono>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Abono__3214EC07C82FE99B");
+            entity.HasKey(e => e.IdAbono).HasName("PK__Abono__A4693DA769CDAFF0");
 
             entity.ToTable("Abono", tb => tb.HasTrigger("tr_Abono_ActualizarEstado"));
 
-            entity.HasIndex(e => e.ClienteId, "IX_Abono_Cliente");
+            entity.HasIndex(e => e.IdCliente, "IX_Abono_Cliente");
+
+            entity.HasIndex(e => new { e.IdCliente, e.FechaAbono }, "IX_Abono_Cliente_Fecha").IsDescending(false, true);
 
             entity.HasIndex(e => e.FechaAbono, "IX_Abono_Fecha");
 
-            entity.HasIndex(e => e.PlanPagoId, "IX_Abono_PlanPago");
+            entity.HasIndex(e => e.IdPlanPago, "IX_Abono_PlanPago");
 
             entity.HasIndex(e => e.NumeroRecibo, "IX_Abono_Recibo");
 
-            entity.HasIndex(e => e.NumeroRecibo, "UQ__Abono__F83E3F2962C31EF4").IsUnique();
+            entity.HasIndex(e => e.NumeroRecibo, "UQ__Abono__F83E3F29569D76C9").IsUnique();
 
             entity.Property(e => e.FechaAbono).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.FormaPago)
@@ -62,29 +76,32 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.NumeroRecibo).HasMaxLength(20);
             entity.Property(e => e.Observaciones).HasMaxLength(300);
 
-            entity.HasOne(d => d.Cliente).WithMany(p => p.Abonos)
-                .HasForeignKey(d => d.ClienteId)
+            entity.HasOne(d => d.IdClienteNavigation).WithMany(p => p.Abonos)
+                .HasForeignKey(d => d.IdCliente)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Abono__ClienteId__656C112C");
+                .HasConstraintName("FK__Abono__IdCliente__7B5B524B");
 
-            entity.HasOne(d => d.PlanPago).WithMany(p => p.Abonos)
-                .HasForeignKey(d => d.PlanPagoId)
+            entity.HasOne(d => d.IdPlanPagoNavigation).WithMany(p => p.Abonos)
+                .HasForeignKey(d => d.IdPlanPago)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Abono__PlanPagoI__66603565");
+                .HasConstraintName("FK__Abono__IdPlanPag__7C4F7684");
         });
 
         modelBuilder.Entity<Cliente>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Cliente__3214EC07CC5F750F");
+            entity.HasKey(e => e.IdCliente).HasName("PK__Cliente__D5946642746E205C");
 
-            entity.ToTable("Cliente");
+            entity.ToTable("Cliente", tb => tb.HasTrigger("trg_InsertarEstadoCuenta"));
 
             entity.HasIndex(e => e.Email, "IX_Cliente_Email");
 
-            entity.HasIndex(e => e.Email, "UQ__Cliente__A9D105349C5B9B61").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Cliente__A9D10534791E98E1").IsUnique();
 
             entity.Property(e => e.Activo).HasDefaultValue(true);
             entity.Property(e => e.CantidadMaximaPagos).HasDefaultValue(12);
+            entity.Property(e => e.CreditoDisponible)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Direccion).HasMaxLength(200);
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.FechaRegistro).HasDefaultValueSql("(getdate())");
@@ -97,60 +114,65 @@ public partial class FashionPayContext : DbContext
 
         modelBuilder.Entity<Compra>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Compra__3214EC07D2DAB502");
+            entity.HasKey(e => e.IdCompra).HasName("PK__Compra__0A5CDB5CCF6E6951");
 
             entity.ToTable("Compra");
 
-            entity.HasIndex(e => e.ClienteId, "IX_Compra_Cliente");
+            entity.HasIndex(e => e.IdCliente, "IX_Compra_Cliente");
+
+            entity.HasIndex(e => new { e.IdCliente, e.FechaCompra }, "IX_Compra_Cliente_Fecha").IsDescending(false, true);
 
             entity.HasIndex(e => e.FechaCompra, "IX_Compra_Fecha");
 
             entity.HasIndex(e => e.NumeroCompra, "IX_Compra_Numero");
 
-            entity.HasIndex(e => e.NumeroCompra, "UQ__Compra__5F9B8DECFE4A6E6E").IsUnique();
+            entity.HasIndex(e => e.NumeroCompra, "UQ__Compra__5F9B8DEC18521F02").IsUnique();
 
+            entity.Property(e => e.EstadoCompra)
+                .HasMaxLength(20)
+                .HasDefaultValue("ACTIVA");
             entity.Property(e => e.FechaCompra).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.MontoMensual).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.MontoTotal).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.NumeroCompra).HasMaxLength(20);
             entity.Property(e => e.Observaciones).HasMaxLength(500);
 
-            entity.HasOne(d => d.Cliente).WithMany(p => p.Compras)
-                .HasForeignKey(d => d.ClienteId)
+            entity.HasOne(d => d.IdClienteNavigation).WithMany(p => p.Compras)
+                .HasForeignKey(d => d.IdCliente)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Compra__ClienteI__5165187F");
+                .HasConstraintName("FK__Compra__IdClient__6754599E");
         });
 
         modelBuilder.Entity<DetalleCompra>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__DetalleC__3214EC07F6AB7417");
+            entity.HasKey(e => e.IdDetalleCompra).HasName("PK__DetalleC__E046CCBBC2259B0A");
 
             entity.ToTable("DetalleCompra");
 
-            entity.HasIndex(e => e.CompraId, "IX_DetalleCompra_Compra");
+            entity.HasIndex(e => e.IdCompra, "IX_DetalleCompra_Compra");
 
-            entity.HasIndex(e => e.ProductoId, "IX_DetalleCompra_Producto");
+            entity.HasIndex(e => e.IdProducto, "IX_DetalleCompra_Producto");
 
             entity.Property(e => e.PrecioUnitario).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Subtotal).HasColumnType("decimal(10, 2)");
 
-            entity.HasOne(d => d.Compra).WithMany(p => p.DetalleCompras)
-                .HasForeignKey(d => d.CompraId)
-                .HasConstraintName("FK__DetalleCo__Compr__5629CD9C");
+            entity.HasOne(d => d.IdCompraNavigation).WithMany(p => p.DetalleCompras)
+                .HasForeignKey(d => d.IdCompra)
+                .HasConstraintName("FK__DetalleCo__IdCom__6C190EBB");
 
-            entity.HasOne(d => d.Producto).WithMany(p => p.DetalleCompras)
-                .HasForeignKey(d => d.ProductoId)
+            entity.HasOne(d => d.IdProductoNavigation).WithMany(p => p.DetalleCompras)
+                .HasForeignKey(d => d.IdProducto)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__DetalleCo__Produ__571DF1D5");
+                .HasConstraintName("FK__DetalleCo__IdPro__6D0D32F4");
         });
 
         modelBuilder.Entity<EstadoCuenta>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__EstadoCu__3214EC07E1207FB0");
+            entity.HasKey(e => e.IdEstadoCuenta).HasName("PK__EstadoCu__79FBA946D5FDEF93");
 
             entity.HasIndex(e => e.Clasificacion, "IX_EstadoCuenta_Clasificacion");
 
-            entity.HasIndex(e => e.ClienteId, "UQ__EstadoCu__71ABD0865A8F54CD").IsUnique();
+            entity.HasIndex(e => e.IdCliente, "UQ__EstadoCu__D5946643BE029266").IsUnique();
 
             entity.Property(e => e.Clasificacion)
                 .HasMaxLength(20)
@@ -158,25 +180,27 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.DeudaTotal).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.FechaActualizacion).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.Cliente).WithOne(p => p.EstadoCuenta)
-                .HasForeignKey<EstadoCuenta>(d => d.ClienteId)
+            entity.HasOne(d => d.IdClienteNavigation).WithOne(p => p.EstadoCuenta)
+                .HasForeignKey<EstadoCuenta>(d => d.IdCliente)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__EstadoCue__Clien__70DDC3D8");
+                .HasConstraintName("FK__EstadoCue__IdCli__06CD04F7");
         });
 
         modelBuilder.Entity<PlanPago>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__PlanPago__3214EC072F27DCBB");
+            entity.HasKey(e => e.IdPlanPago).HasName("PK__PlanPago__DECF3B6D9E5AE4A1");
 
             entity.ToTable("PlanPago");
 
-            entity.HasIndex(e => e.CompraId, "IX_PlanPago_Compra");
+            entity.HasIndex(e => new { e.IdCompra, e.Estado }, "IX_PlanPago_Cliente_Estado");
+
+            entity.HasIndex(e => e.IdCompra, "IX_PlanPago_Compra");
 
             entity.HasIndex(e => e.Estado, "IX_PlanPago_Estado");
 
             entity.HasIndex(e => e.FechaVencimiento, "IX_PlanPago_Vencimiento");
 
-            entity.HasIndex(e => new { e.CompraId, e.NumeroPago }, "UQ__PlanPago__A1B2D5F68B81E4AE").IsUnique();
+            entity.HasIndex(e => new { e.IdCompra, e.NumeroPago }, "UQ__PlanPago__AD93A9EF72A46DFD").IsUnique();
 
             entity.Property(e => e.DiasVencidos).HasComputedColumnSql("(case when [Estado]='VENCIDO' then datediff(day,[FechaVencimiento],getdate()) else (0) end)", false);
             entity.Property(e => e.Estado)
@@ -186,22 +210,22 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.MontoProgramado).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.SaldoPendiente).HasColumnType("decimal(10, 2)");
 
-            entity.HasOne(d => d.Compra).WithMany(p => p.PlanPagos)
-                .HasForeignKey(d => d.CompraId)
-                .HasConstraintName("FK__PlanPago__Compra__5CD6CB2B");
+            entity.HasOne(d => d.IdCompraNavigation).WithMany(p => p.PlanPagos)
+                .HasForeignKey(d => d.IdCompra)
+                .HasConstraintName("FK__PlanPago__IdComp__72C60C4A");
         });
 
         modelBuilder.Entity<Producto>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Producto__3214EC07B1F738E5");
+            entity.HasKey(e => e.IdProducto).HasName("PK__Producto__0988921067FA3C6B");
 
             entity.ToTable("Producto");
 
             entity.HasIndex(e => e.Codigo, "IX_Producto_Codigo");
 
-            entity.HasIndex(e => e.ProveedorId, "IX_Producto_Proveedor");
+            entity.HasIndex(e => e.IdProveedor, "IX_Producto_Proveedor");
 
-            entity.HasIndex(e => e.Codigo, "UQ__Producto__06370DAC0CC5A9B6").IsUnique();
+            entity.HasIndex(e => e.Codigo, "UQ__Producto__06370DAC1F72AC3F").IsUnique();
 
             entity.Property(e => e.Activo).HasDefaultValue(true);
             entity.Property(e => e.Codigo).HasMaxLength(50);
@@ -210,15 +234,15 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.Nombre).HasMaxLength(100);
             entity.Property(e => e.Precio).HasColumnType("decimal(10, 2)");
 
-            entity.HasOne(d => d.Proveedor).WithMany(p => p.Productos)
-                .HasForeignKey(d => d.ProveedorId)
+            entity.HasOne(d => d.IdProveedorNavigation).WithMany(p => p.Productos)
+                .HasForeignKey(d => d.IdProveedor)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Producto__Provee__4CA06362");
+                .HasConstraintName("FK__Producto__IdProv__628FA481");
         });
 
         modelBuilder.Entity<Proveedor>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Proveedo__3214EC0722E07696");
+            entity.HasKey(e => e.IdProveedor).HasName("PK__Proveedo__E8B631AF9C84BBA1");
 
             entity.ToTable("Proveedor");
 
@@ -231,63 +255,57 @@ public partial class FashionPayContext : DbContext
             entity.Property(e => e.Telefono).HasMaxLength(20);
         });
 
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.IdUser).HasName("PK__User__B7C92638");
+
+            entity.ToTable("User");
+
+            entity.HasIndex(e => e.Username, "IX_User_Username");
+            entity.HasIndex(e => e.Email, "IX_User_Email");
+            entity.HasIndex(e => e.Username, "UQ__User__Username").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__User__Email").IsUnique();
+
+            entity.Property(e => e.Username).HasMaxLength(50);
+            entity.Property(e => e.Password).HasMaxLength(255);
+            entity.Property(e => e.Email).HasMaxLength(100);
+            entity.Property(e => e.Active).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.IdRole).HasName("PK__Role__B19461A8");
+
+            entity.ToTable("Role");
+
+            entity.HasIndex(e => e.Name, "IX_Role_Name");
+            entity.HasIndex(e => e.Name, "UQ__Role__Name").IsUnique();
+
+            entity.Property(e => e.Name).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.HasKey(e => new { e.IdUser, e.IdRole }).HasName("PK__UserRole__UserRole");
+
+            entity.ToTable("UserRole");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.IdUser)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__UserRole__IdUser");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.IdRole)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__UserRole__IdRole");
+        });
+
         OnModelCreatingPartial(modelBuilder);
-        ConfigureCustomEntities(modelBuilder);
     }
-    private void ConfigureCustomEntities(ModelBuilder modelBuilder)
-    {
-        // Configurar propiedades de auditoria
-        modelBuilder.Entity<Cliente>(entity =>
-        {
-            entity.Property(e => e.FechaRegistro)
-                .HasDefaultValueSql("GETDATE()");
-        });
 
-        modelBuilder.Entity<Compra>(entity =>
-        {
-            entity.Property(e => e.FechaCompra)
-                .HasDefaultValueSql("GETDATE()");
-        });
-
-        modelBuilder.Entity<Abono>(entity =>
-        {
-            entity.Property(e => e.FechaAbono)
-                .HasDefaultValueSql("GETDATE()");
-        });
-
-        // Configurar campos calculados
-        modelBuilder.Entity<PlanPago>(entity =>
-        {
-            entity.Property(e => e.DiasVencidos)
-                .HasComputedColumnSql("CASE WHEN Estado = 'VENCIDO' THEN DATEDIFF(DAY, FechaVencimiento, GETDATE()) ELSE 0 END");
-        });
-
-        // Configurar índices para performance
-        modelBuilder.Entity<Cliente>()
-            .HasIndex(c => c.Email)
-            .IsUnique()
-            .HasDatabaseName("IX_Cliente_Email");
-
-        modelBuilder.Entity<Compra>()
-            .HasIndex(c => new { c.ClienteId, c.FechaCompra })
-            .HasDatabaseName("IX_Compra_Cliente_Fecha");
-
-        modelBuilder.Entity<PlanPago>()
-            .HasIndex(p => new { p.CompraId, p.Estado })
-            .HasDatabaseName("IX_PlanPago_Compra_Estado")
-            .IncludeProperties(p => p.SaldoPendiente);
-
-        // Configurar comportamiento de eliminación
-        modelBuilder.Entity<Compra>()
-            .HasMany(c => c.DetalleCompras)
-            .WithOne(d => d.Compra)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Compra>()
-            .HasMany(c => c.PlanPagos)
-            .WithOne(p => p.Compra)
-            .OnDelete(DeleteBehavior.Cascade);
-    }
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
 public static class FashionPayContextExtensions
@@ -306,7 +324,6 @@ public static class FashionPayContextExtensions
                     errorNumbersToAdd: null);
             });
 
-            // Configuraciones adicionales para desarrollo
             options.EnableSensitiveDataLogging(false);
             options.EnableDetailedErrors(false);
         });

@@ -11,38 +11,38 @@ public class PlanPagoRepository : BaseRepository<PlanPago>, IPlanPagoRepository
     {
     }
 
-    public async Task<IEnumerable<PlanPago>> GetPagosVencidosAsync()
+    public async Task<IEnumerable<PlanPago>> GetOverduePaymentsAsync()
     {
         return await _dbSet
-            .Include(pp => pp.Compra)
-                .ThenInclude(c => c.Cliente)
+            .Include(pp => pp.IdCompraNavigation)
+                .ThenInclude(c => c.IdClienteNavigation)
             .Where(pp => pp.Estado == "VENCIDO" && pp.SaldoPendiente > 0)
             .OrderBy(pp => pp.FechaVencimiento)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<PlanPago>> GetPagosByClienteAsync(int clienteId)
+    public async Task<IEnumerable<PlanPago>> GetPaymentsByClientAsync(int clienteId)
     {
         return await _dbSet
-            .Include(pp => pp.Compra)
-            .Where(pp => pp.Compra.ClienteId == clienteId)
+            .Include(pp => pp.IdCompraNavigation)
+            .Where(pp => pp.IdCompraNavigation.IdCliente == clienteId)
             .OrderBy(pp => pp.FechaVencimiento)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<PlanPago>> GetPagosByCompraAsync(int compraId)
+    public async Task<IEnumerable<PlanPago>> GetPaymentsByPurchaseAsync(int compraId)
     {
         return await _dbSet
-            .Where(pp => pp.CompraId == compraId)
+            .Where(pp => pp.IdCompra == compraId)
             .OrderBy(pp => pp.NumeroPago)
             .ToListAsync();
     }
 
-    public async Task<PlanPago?> GetProximoPagoPendienteAsync(int clienteId)
+    public async Task<PlanPago?> GetNextPendingPaymentAsync(int clienteId)
     {
         return await _dbSet
-            .Include(pp => pp.Compra)
-            .Where(pp => pp.Compra.ClienteId == clienteId &&
+            .Include(pp => pp.IdCompraNavigation)
+            .Where(pp => pp.IdCompraNavigation.IdCliente == clienteId &&
                         pp.Estado == "PENDIENTE" &&
                         pp.SaldoPendiente > 0)
             .OrderBy(pp => pp.FechaVencimiento)

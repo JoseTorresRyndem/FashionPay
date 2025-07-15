@@ -4,7 +4,15 @@ namespace FashionPay.Core.Interfaces;
 
 public interface IAbonoRepository : IBaseRepository<Abono>
 {
-    Task<IEnumerable<Abono>> GetAbonosByClienteAsync(int clienteId);
-    Task<IEnumerable<Abono>> GetAbonosByFechaAsync(DateTime fecha);
-    Task<decimal> GetTotalAbonosClienteAsync(int clienteId, DateTime? fechaDesde = null);
+    Task<IEnumerable<Abono>> GetPaymentsByClientAsync(int clientId);
+    Task<IEnumerable<Abono>> GetPaymentsByDateAsync(DateTime date);
+    Task<Abono> ApplyFullPaymentAsync(
+        int IdCliente,
+        int IdCompra,
+        decimal montoAbono,
+        string formaPago,
+        string? observaciones,
+        PlanPago pagoPendiente);
+    Task<IEnumerable<Abono>> GetPaymentsWithFullRelationsAsync(int? clienteId = null);
+
 }

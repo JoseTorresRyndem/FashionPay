@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace FashionPay.Core.Entities;
+﻿namespace FashionPay.Core.Entities;
 
 public partial class EstadoCuenta
 {
-    public int Id { get; set; }
+    public int IdEstadoCuenta { get; set; }
 
-    public int ClienteId { get; set; }
+    public int IdCliente { get; set; }
 
     public string Clasificacion { get; set; } = null!;
 
@@ -21,5 +18,5 @@ public partial class EstadoCuenta
 
     public DateTime FechaActualizacion { get; set; }
 
-    public virtual Cliente Cliente { get; set; } = null!;
+    public virtual Cliente IdClienteNavigation { get; set; } = null!;
 }

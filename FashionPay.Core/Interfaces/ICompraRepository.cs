@@ -4,10 +4,15 @@ namespace FashionPay.Core.Interfaces;
 
 public interface ICompraRepository : IBaseRepository<Compra>
 {
-    Task<IEnumerable<Compra>> GetComprasByClienteAsync(int clienteId);
-    Task<Compra?> GetCompraWithDetallesAsync(int compraId);
-    Task<IEnumerable<Compra>> GetComprasWithFiltrosAsync(
-        int? clienteId = null,
-        DateTime? fechaDesde = null,
-        DateTime? fechaHasta = null);
+    Task<IEnumerable<Compra>> GetAllWithRelationsAsync();
+    Task<Compra?> GetByIdWithRelationsAsync(int id);
+    Task<IEnumerable<Compra>> GetByClientWithRelationsAsync(int clientId);
+    Task<IEnumerable<Compra>> GetPurchasesWithFiltersAsync(
+        int? clientId = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        decimal? minAmount = null,
+        decimal? maxAmount = null
+    );
+    Task<IEnumerable<Compra>> GetComprasWithProductAsync(int productId);
 }

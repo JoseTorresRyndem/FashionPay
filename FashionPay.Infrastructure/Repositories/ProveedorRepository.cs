@@ -11,7 +11,7 @@ public class ProveedorRepository : BaseRepository<Proveedor>, IProveedorReposito
     {
     }
 
-    public async Task<IEnumerable<Proveedor>> GetProveedoresActivosAsync()
+    public async Task<IEnumerable<Proveedor>> GetProviderActiveAsync()
     {
         return await _dbSet
             .Where(p => p.Activo == true)
@@ -19,10 +19,10 @@ public class ProveedorRepository : BaseRepository<Proveedor>, IProveedorReposito
             .ToListAsync();
     }
 
-    public async Task<Proveedor?> GetProveedorWithProductosAsync(int proveedorId)
+    public async Task<Proveedor?> GetProviderWithProductsAsync(int proveedorId)
     {
         return await _dbSet
             .Include(p => p.Productos.Where(prod => prod.Activo == true))
-            .FirstOrDefaultAsync(p => p.Id == proveedorId);
+            .FirstOrDefaultAsync(p => p.IdProveedor == proveedorId);
     }
 }

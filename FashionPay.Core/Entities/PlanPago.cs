@@ -5,9 +5,9 @@ namespace FashionPay.Core.Entities;
 
 public partial class PlanPago
 {
-    public int Id { get; set; }
+    public int IdPlanPago { get; set; }
 
-    public int CompraId { get; set; }
+    public int IdCompra { get; set; }
 
     public int NumeroPago { get; set; }
 
@@ -25,5 +25,5 @@ public partial class PlanPago
 
     public virtual ICollection<Abono> Abonos { get; set; } = new List<Abono>();
 
-    public virtual Compra Compra { get; set; } = null!;
+    public virtual Compra IdCompraNavigation { get; set; } = null!;
 }

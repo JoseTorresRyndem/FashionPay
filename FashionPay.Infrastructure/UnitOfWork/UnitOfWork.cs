@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
-using FashionPay.Core.Data;
+﻿using FashionPay.Core.Data;
 using FashionPay.Core.Interfaces;
 using FashionPay.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace FashionPay.Infrastructure.UnitOfWork;
 
@@ -17,13 +18,20 @@ public class UnitOfWork : IUnitOfWork
     private IAbonoRepository? _abonos;
     private IProductoRepository? _productos;
     private IProveedorRepository? _proveedores;
+    private IEstadoCuentaRepository? _estadoCuentas;
+    private IUserRepository? _users;
+    private IRoleRepository? _roles;
+    private IUserRoleRepository? _userRoles;
 
     public UnitOfWork(FashionPayContext context)
     {
         _context = context;
     }
+    public DbContext Context => _context;
+
 
     // Propiedades que crean repositorios bajo demanda
+
     public IClienteRepository Clientes
     {
         get { return _clientes ??= new ClienteRepository(_context); }
@@ -52,6 +60,25 @@ public class UnitOfWork : IUnitOfWork
     public IProveedorRepository Proveedores
     {
         get { return _proveedores ??= new ProveedorRepository(_context); }
+    }
+    public IEstadoCuentaRepository EstadoCuentas
+    {
+        get { return _estadoCuentas ??= new EstadoCuentaRepository(_context); }
+    }
+
+    public IUserRepository Users
+    {
+        get { return _users ??= new UserRepository(_context); }
+    }
+
+    public IRoleRepository Roles
+    {
+        get { return _roles ??= new RoleRepository(_context); }
+    }
+
+    public IUserRoleRepository UserRoles
+    {
+        get { return _userRoles ??= new UserRoleRepository(_context); }
     }
 
     // Métodos de transacción
