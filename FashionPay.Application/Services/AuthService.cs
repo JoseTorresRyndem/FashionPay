@@ -91,7 +91,7 @@ public class AuthService : IAuthService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:Key"] ?? "");
+            var key = Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"] ?? "");
             
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
@@ -116,7 +116,7 @@ public class AuthService : IAuthService
     public Task<string> GenerateTokenAsync(UserResponseDto user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:Key"] ?? "");
+        var key = Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"] ?? "");
         
         var claims = new List<Claim>
         {
